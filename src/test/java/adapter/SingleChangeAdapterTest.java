@@ -41,7 +41,7 @@ public class SingleChangeAdapterTest {
                 });
 
         for (int i = 1; i < 4; i++) {
-            changeAdapter.update(i);
+            assertEquals("Update", (Integer) (i - 1), changeAdapter.update(i));
         }
 
         // Verify queue was emptied

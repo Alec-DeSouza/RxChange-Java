@@ -14,12 +14,14 @@ public class SingleChangeAdapter<D> {
         this.data = data;
     }
 
-    public void update(final D data) {
+    public D update(final D data) {
         final D oldData = this.data;
         this.data = data;
 
         // Signal update
         publishSubject.onNext(new MetaChangeMessage<>(oldData, this.data, ChangeType.UPDATE, null));
+
+        return oldData;
     }
 
     public Observable<ChangeMessage<D>> getObservable() {

@@ -49,7 +49,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            changeAdapter.add(i);
+            assertEquals("Add", (Integer) i, changeAdapter.add(i));
         }
 
         // Verify queue was emptied
@@ -83,7 +83,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            changeAdapter.remove(0);
+            assertEquals("Remove", (Integer) i, changeAdapter.remove(0));
         }
 
         // Verify queue was emptied
@@ -117,7 +117,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            changeAdapter.update(i, i + 1);
+            assertEquals("Update", (Integer) i, changeAdapter.update(i, i + 1));
         }
 
         // Verify queue was emptied

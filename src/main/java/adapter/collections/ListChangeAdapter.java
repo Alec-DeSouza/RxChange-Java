@@ -1,6 +1,5 @@
 package adapter.collections;
 
-import adapter.MultiChangeAdapter;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
 import message.ChangeMessage;
@@ -10,11 +9,10 @@ import type.ChangeType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListChangeAdapter<D> implements MultiChangeAdapter<List<D>, Integer, D> {
+public class ListChangeAdapter<D> {
     private final PublishSubject<ChangeMessage<List<D>>> publishSubject = PublishSubject.create();
     private final List<D> dataList = new ArrayList<>();
 
-    @Override
     public Integer add(final D data) {
         final List<D> oldDataList = new ArrayList<>(dataList);
         dataList.add(data);
@@ -25,7 +23,6 @@ public class ListChangeAdapter<D> implements MultiChangeAdapter<List<D>, Integer
         return oldDataList.size();
     }
 
-    @Override
     public D remove(final Integer index) {
         final List<D> oldDataList = new ArrayList<>(dataList);
         final D data = dataList.remove(index.intValue());
@@ -36,7 +33,6 @@ public class ListChangeAdapter<D> implements MultiChangeAdapter<List<D>, Integer
         return data;
     }
 
-    @Override
     public D update(final Integer index, final D data) {
         final List<D> oldDataList = new ArrayList<>(dataList);
         final D resultData = dataList.set(index, data);
@@ -47,17 +43,14 @@ public class ListChangeAdapter<D> implements MultiChangeAdapter<List<D>, Integer
         return resultData;
     }
 
-    @Override
     public D get(final Integer index) {
         return dataList.get(index);
     }
 
-    @Override
     public List<D> getAll() {
         return dataList;
     }
 
-    @Override
     public Observable<ChangeMessage<List<D>>> getObservable() {
         return publishSubject;
     }
