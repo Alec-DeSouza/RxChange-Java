@@ -1,12 +1,12 @@
-package adapter.collections;
+package com.umbraltech.rxchange.adapter.collections;
 
 import com.google.common.primitives.Ints;
-import filter.ChangeTypeFilter;
-import message.ChangeMessage;
-import observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.filter.ChangeTypeFilter;
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
-import type.ChangeType;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -49,7 +49,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Add", (Integer) i, changeAdapter.add(i));
+            assertEquals("Add", true, changeAdapter.add(i));
         }
 
         // Verify queue was emptied
@@ -83,7 +83,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Remove", (Integer) i, changeAdapter.remove(0));
+            assertEquals("Remove", true, changeAdapter.remove(0));
         }
 
         // Verify queue was emptied
@@ -117,7 +117,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Update", (Integer) i, changeAdapter.update(i, i + 1));
+            assertEquals("Update", true, changeAdapter.update(i, i + 1));
         }
 
         // Verify queue was emptied
@@ -147,6 +147,6 @@ public class ListChangeAdapterTest {
             changeAdapter.add(i);
         }
 
-        assertArrayEquals("Data", Ints.toArray(testList), Ints.toArray(changeAdapter.getAll()));
+        assertArrayEquals("Data", Ints.toArray(testList), Ints.toArray(changeAdapter.getList()));
     }
 }

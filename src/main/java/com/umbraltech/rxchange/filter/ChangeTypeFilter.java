@@ -1,8 +1,8 @@
-package filter;
+package com.umbraltech.rxchange.filter;
 
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.type.ChangeType;
 import io.reactivex.functions.Predicate;
-import message.ChangeMessage;
-import type.ChangeType;
 
 public class ChangeTypeFilter implements Predicate<ChangeMessage> {
     private final ChangeType changeType;

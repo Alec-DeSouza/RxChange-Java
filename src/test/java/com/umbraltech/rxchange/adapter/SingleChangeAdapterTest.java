@@ -1,11 +1,11 @@
-package adapter;
+package com.umbraltech.rxchange.adapter;
 
-import filter.ChangeTypeFilter;
-import message.ChangeMessage;
-import observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.filter.ChangeTypeFilter;
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
-import type.ChangeType;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -41,7 +41,7 @@ public class SingleChangeAdapterTest {
                 });
 
         for (int i = 1; i < 4; i++) {
-            assertEquals("Update", (Integer) (i - 1), changeAdapter.update(i));
+            assertEquals("Update", true, changeAdapter.update(i));
         }
 
         // Verify queue was emptied

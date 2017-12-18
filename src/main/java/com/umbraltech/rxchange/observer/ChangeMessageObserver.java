@@ -1,7 +1,7 @@
-package observer;
+package com.umbraltech.rxchange.observer;
 
+import com.umbraltech.rxchange.message.ChangeMessage;
 import io.reactivex.observers.DefaultObserver;
-import message.ChangeMessage;
 
 public class ChangeMessageObserver<D> extends DefaultObserver<ChangeMessage<D>> {
     @Override

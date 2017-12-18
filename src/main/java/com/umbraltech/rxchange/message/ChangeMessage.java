@@ -1,6 +1,6 @@
-package message;
+package com.umbraltech.rxchange.message;
 
-import type.ChangeType;
+import com.umbraltech.rxchange.type.ChangeType;
 
 public class ChangeMessage<D> {
     private final D oldData;
@@ -32,10 +32,10 @@ public class ChangeMessage<D> {
         stringBuilder.append('[')
                 .append("oldData=")
                 .append(oldData)
-                .append(',')
+                .append(", ")
                 .append("newData=")
                 .append(newData)
-                .append(',')
+                .append(", ")
                 .append("changeType=")
                 .append(changeType)
                 .append(']');

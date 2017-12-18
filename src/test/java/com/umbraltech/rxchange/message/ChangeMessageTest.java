@@ -1,8 +1,8 @@
-package message;
+package com.umbraltech.rxchange.message;
 
+import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
-import type.ChangeType;
 
 import static org.junit.Assert.assertEquals;
 

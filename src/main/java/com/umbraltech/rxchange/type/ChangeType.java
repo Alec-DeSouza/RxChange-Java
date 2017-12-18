@@ -1,4 +1,4 @@
-package type;
+package com.umbraltech.rxchange.type;
 
 public enum ChangeType {
     ADD,

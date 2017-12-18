@@ -1,9 +1,9 @@
-package filter;
+package com.umbraltech.rxchange.filter;
 
-import message.ChangeMessage;
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
-import type.ChangeType;
 
 import static org.junit.Assert.assertEquals;
 

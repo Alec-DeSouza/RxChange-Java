@@ -1,14 +1,14 @@
-package adapter.collections;
+package com.umbraltech.rxchange.adapter.collections;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
-import filter.ChangeTypeFilter;
-import message.ChangeMessage;
-import message.MetaChangeMessage;
-import observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.filter.ChangeTypeFilter;
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.message.MetaChangeMessage;
+import com.umbraltech.rxchange.observer.ChangeMessageObserver;
+import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
-import type.ChangeType;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class MapChangeAdapterTest {
     private MapChangeAdapter<Integer, String> changeAdapter;
@@ -62,11 +63,33 @@ public class MapChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Data", null, changeAdapter.add(i, String.valueOf(i)));
+            assertEquals("Data", true, changeAdapter.add(i, String.valueOf(i)));
         }
 
         // Verify queue was emptied
         assertEquals("Test queue", 0, testQueue.size());
+    }
+
+    @Test
+    public void addExisting() {
+        for (int i = 0; i < 3; i++) {
+            changeAdapter.add(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Add invoked for existing key");
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Data", false, changeAdapter.add(i, String.valueOf(i)));
+        }
     }
 
     @Test
@@ -107,11 +130,29 @@ public class MapChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Data", String.valueOf(i), changeAdapter.remove(i));
+            assertEquals("Data", true, changeAdapter.remove(i));
         }
 
         // Verify queue was emptied
         assertEquals("Test queue", 0, testQueue.size());
+    }
+
+    @Test
+    public void removeNonExistent() {
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Remove called for nonexistent key");
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Data", false, changeAdapter.remove(i));
+        }
     }
 
     @Test
@@ -148,11 +189,29 @@ public class MapChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Data", String.valueOf(i), changeAdapter.update(i, String.valueOf(i + 1)));
+            assertEquals("Data", true, changeAdapter.update(i, String.valueOf(i + 1)));
         }
 
         // Verify queue was emptied
         assertEquals("Test queue", 0, testQueue.size());
+    }
+
+    @Test
+    public void updateNonExistent() {
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Update invoked for nonexistent key");
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Data", false, changeAdapter.update(i, String.valueOf(i + 1)));
+        }
     }
 
     @Test
@@ -170,6 +229,17 @@ public class MapChangeAdapterTest {
     }
 
     @Test
+    public void getNonExistent() {
+        for (int i = 0; i < 3; i++) {
+            changeAdapter.add(i, String.valueOf(i));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Data", null, changeAdapter.get(i + 3));
+        }
+    }
+
+    @Test
     public void getAll() {
         final Map<Integer, String> testMap = new HashMap<>();
 
@@ -178,7 +248,7 @@ public class MapChangeAdapterTest {
             changeAdapter.add(i, String.valueOf(i));
         }
 
-        final MapDifference<Integer, String> dataDiff = Maps.difference(testMap, changeAdapter.getAll());
+        final MapDifference<Integer, String> dataDiff = Maps.difference(testMap, changeAdapter.getMap());
 
         assertEquals("Data (common)", 3, dataDiff.entriesInCommon().size());
         assertEquals("Data (different)", 0, dataDiff.entriesDiffering().size()

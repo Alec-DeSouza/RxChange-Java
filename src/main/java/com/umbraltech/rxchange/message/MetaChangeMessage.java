@@ -1,6 +1,6 @@
-package message;
+package com.umbraltech.rxchange.message;
 
-import type.ChangeType;
+import com.umbraltech.rxchange.type.ChangeType;
 
 public class MetaChangeMessage<D, M> extends ChangeMessage<D> {
     private final M metadata;

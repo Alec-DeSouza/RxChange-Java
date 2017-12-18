@@ -1,10 +1,10 @@
-package adapter;
+package com.umbraltech.rxchange.adapter;
 
+import com.umbraltech.rxchange.message.ChangeMessage;
+import com.umbraltech.rxchange.message.MetaChangeMessage;
+import com.umbraltech.rxchange.type.ChangeType;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
-import message.ChangeMessage;
-import message.MetaChangeMessage;
-import type.ChangeType;
 
 public class SingleChangeAdapter<D> {
     private final PublishSubject<ChangeMessage<D>> publishSubject = PublishSubject.create();
@@ -14,14 +14,14 @@ public class SingleChangeAdapter<D> {
         this.data = data;
     }
 
-    public D update(final D data) {
+    public boolean update(final D data) {
         final D oldData = this.data;
         this.data = data;
 
         // Signal update
         publishSubject.onNext(new MetaChangeMessage<>(oldData, this.data, ChangeType.UPDATE, null));
 
-        return oldData;
+        return true;
     }
 
     public Observable<ChangeMessage<D>> getObservable() {
