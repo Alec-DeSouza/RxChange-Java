@@ -33,7 +33,7 @@ public class SingleChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Integer>() {
                     @Override
                     public void onNext(ChangeMessage<Integer> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         assertEquals("Old data", (Integer) (testQueue.peek() - 1), changeMessage.getOldData());
                         assertEquals("New data", testQueue.poll(), changeMessage.getNewData());

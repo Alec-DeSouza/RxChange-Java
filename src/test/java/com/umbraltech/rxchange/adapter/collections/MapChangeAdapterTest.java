@@ -39,7 +39,7 @@ public class MapChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
                     @Override
                     public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
                                 (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;
@@ -106,7 +106,7 @@ public class MapChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
                     @Override
                     public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
                                 (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;
@@ -146,7 +146,7 @@ public class MapChangeAdapterTest {
                     public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
                         //System.out.println(changeMessage.toString());
 
-                        fail("Remove called for nonexistent key");
+                        fail("Remove invoked for nonexistent key");
                     }
                 });
 
@@ -169,7 +169,7 @@ public class MapChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
                     @Override
                     public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
                                 (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;

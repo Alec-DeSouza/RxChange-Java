@@ -26,10 +26,29 @@ public class ListChangeAdapter<D> {
         return true;
     }
 
+    public boolean add(final List<D> dataList) {
+        final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
+        this.dataList.addAll(dataList);
+
+        final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
+        final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
+
+        // Signal addition
+        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD,
+                changeSnapshot));
+
+        return true;
+    }
+
     public boolean remove(final int index) {
         final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        final D data = dataList.remove(index);
 
+        // Validate index
+        if (index >= dataList.size()) {
+            return false;
+        }
+
+        final D data = dataList.remove(index);
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
         // Signal removal
@@ -38,10 +57,39 @@ public class ListChangeAdapter<D> {
         return true;
     }
 
+    public boolean remove(final List<Integer> indexList) {
+        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+        final List<D> removedList = new ArrayList<>();
+
+        for (final Integer i : indexList) {
+
+            // Validate index
+            if (i >= dataList.size()) {
+                return false;
+            }
+
+            removedList.add(dataList.get(i));
+        }
+
+        dataList.removeAll(removedList);
+        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+        // Signal removal
+        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE,
+                removedList));
+
+        return true;
+    }
+
     public boolean update(final int index, final D data) {
         final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        final D resultData = dataList.set(index, data);
 
+        // Validate index
+        if (index >= dataList.size()) {
+            return false;
+        }
+
+        final D resultData = dataList.set(index, data);
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
         // Signal update

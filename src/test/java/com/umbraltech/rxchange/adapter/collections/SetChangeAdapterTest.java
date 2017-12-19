@@ -36,7 +36,7 @@ public class SetChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Set<Integer>>() {
                     @Override
                     public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Set<Integer>, Integer> metaChangeMessage =
                                 (MetaChangeMessage<Set<Integer>, Integer>) changeMessage;
@@ -95,7 +95,7 @@ public class SetChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Set<Integer>>() {
                     @Override
                     public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Set<Integer>, Integer> metaChangeMessage =
                                 (MetaChangeMessage<Set<Integer>, Integer>) changeMessage;
@@ -150,7 +150,7 @@ public class SetChangeAdapterTest {
                 .subscribe(new ChangeMessageObserver<Set<Integer>>() {
                     @Override
                     public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        System.out.println(changeMessage.toString());
+                        //System.out.println(changeMessage.toString());
 
                         final MetaChangeMessage<Set<Integer>, List<Integer>> metaChangeMessage =
                                 (MetaChangeMessage<Set<Integer>, List<Integer>>) changeMessage;
