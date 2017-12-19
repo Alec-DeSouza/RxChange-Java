@@ -9,7 +9,10 @@ import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -133,88 +136,6 @@ public class SetChangeAdapterTest {
 
         for (int i = 0; i < 3; i++) {
             assertEquals("Data", false, changeAdapter.remove(i));
-        }
-    }
-
-    @Test
-    public void update() {
-        final Queue<Integer> testQueue = new LinkedList<>();
-
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(i);
-            changeAdapter.add(i);
-        }
-
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
-
-                        final MetaChangeMessage<Set<Integer>, List<Integer>> metaChangeMessage =
-                                (MetaChangeMessage<Set<Integer>, List<Integer>>) changeMessage;
-
-                        final Sets.SetView<Integer> dataDiff = Sets.difference(changeMessage.getNewData(),
-                                changeMessage.getOldData());
-
-                        assertEquals("Difference (count)", 1, dataDiff.size());
-                        assertEquals("Difference (value)", (Integer) (testQueue.peek() + 3),
-                                dataDiff.iterator().next());
-
-                        assertEquals("Metadata (old)", testQueue.peek(),
-                                metaChangeMessage.getMetadata().get(0));
-                        assertEquals("Metadata (new)", (Integer) (testQueue.poll() + 3),
-                                metaChangeMessage.getMetadata().get(1));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.update(i, i + 3));
-        }
-
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
-    }
-
-    @Test
-    public void updateOldNonExistent() {
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
-
-                        fail("Update invoked for nonexistent old value");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.update(i, i + 3));
-        }
-    }
-
-    @Test
-    public void updateNewExisting() {
-        for (int i = 0; i < 3; i++) {
-            changeAdapter.add(i);
-            changeAdapter.add(i + 3);
-        }
-
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
-
-                        fail("Update invoked for existing new value");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.update(i, i + 3));
         }
     }
 
