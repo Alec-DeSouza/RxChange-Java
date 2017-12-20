@@ -55,9 +55,9 @@ public class MapChangeAdapterTest {
                         assertEquals("Difference (value)", testQueue.peek().getValue(),
                                 dataDiff.entriesOnlyOnRight().get(testQueue.peek().getKey()));
 
-                        assertEquals("Metadata key", testQueue.peek().getKey(),
+                        assertEquals("Metadata (key)", testQueue.peek().getKey(),
                                 metaChangeMessage.getMetadata().getKey());
-                        assertEquals("Metadata value", testQueue.poll().getValue(),
+                        assertEquals("Metadata (value)", testQueue.poll().getValue(),
                                 metaChangeMessage.getMetadata().getValue());
                     }
                 });
@@ -93,6 +93,61 @@ public class MapChangeAdapterTest {
     }
 
     @Test
+    public void addBatch() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
+                                testMap);
+                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
+                                testMap);
+
+                        assertEquals("Difference count (old)", 3, dataDiffOld.entriesOnlyOnLeft().size()
+                                + dataDiffOld.entriesOnlyOnRight().size()
+                                + dataDiffOld.entriesDiffering().size());
+                        assertEquals("Difference count (new)", 0, dataDiffNew.entriesOnlyOnLeft().size()
+                                + dataDiffNew.entriesOnlyOnRight().size()
+                                + dataDiffNew.entriesDiffering().size());
+                    }
+                });
+
+        assertEquals("Data", true, changeAdapter.add(testMap));
+    }
+
+    @Test
+    public void addBatchExisting() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i));
+            changeAdapter.add(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Add invoked for duplicate keys");
+                    }
+                });
+
+        assertEquals("Data", false, changeAdapter.add(testMap));
+    }
+
+    @Test
     public void remove() {
         final Queue<Map.Entry<Integer, String>> testQueue = new LinkedList<>();
 
@@ -122,9 +177,9 @@ public class MapChangeAdapterTest {
                         assertEquals("Difference (value)", testQueue.peek().getValue(),
                                 dataDiff.entriesOnlyOnLeft().get(testQueue.peek().getKey()));
 
-                        assertEquals("Metadata key", testQueue.peek().getKey(),
+                        assertEquals("Metadata (key)", testQueue.peek().getKey(),
                                 metaChangeMessage.getMetadata().getKey());
-                        assertEquals("Metadata value", testQueue.poll().getValue(),
+                        assertEquals("Metadata (value)", testQueue.poll().getValue(),
                                 metaChangeMessage.getMetadata().getValue());
                     }
                 });
@@ -153,6 +208,61 @@ public class MapChangeAdapterTest {
         for (int i = 0; i < 3; i++) {
             assertEquals("Data", false, changeAdapter.remove(i));
         }
+    }
+
+    @Test
+    public void removeBatch() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i));
+            changeAdapter.add(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
+                                testMap);
+                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
+                                testMap);
+
+                        assertEquals("Difference count (old)", 0, dataDiffOld.entriesOnlyOnLeft().size()
+                                + dataDiffOld.entriesOnlyOnRight().size()
+                                + dataDiffOld.entriesDiffering().size());
+                        assertEquals("Difference count (new)", 3, dataDiffNew.entriesOnlyOnLeft().size()
+                                + dataDiffNew.entriesOnlyOnRight().size()
+                                + dataDiffNew.entriesDiffering().size());
+                    }
+                });
+
+        assertEquals("Data", true, changeAdapter.remove(testMap));
+    }
+
+    @Test
+    public void removeBatchNonExistent() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Update invoked for nonexistent keys");
+                    }
+                });
+
+        assertEquals("Data", false, changeAdapter.remove(testMap));
     }
 
     @Test
@@ -212,6 +322,61 @@ public class MapChangeAdapterTest {
         for (int i = 0; i < 3; i++) {
             assertEquals("Data", false, changeAdapter.update(i, String.valueOf(i + 1)));
         }
+    }
+
+    @Test
+    public void updateBatch() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i + 1));
+            changeAdapter.add(i, String.valueOf(i));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
+                                testMap);
+                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
+                                testMap);
+
+                        assertEquals("Difference count (old)", 3, dataDiffOld.entriesOnlyOnLeft().size()
+                                + dataDiffOld.entriesOnlyOnRight().size()
+                                + dataDiffOld.entriesDiffering().size());
+                        assertEquals("Difference count (new)", 0, dataDiffNew.entriesOnlyOnLeft().size()
+                                + dataDiffNew.entriesOnlyOnRight().size()
+                                + dataDiffNew.entriesDiffering().size());
+                    }
+                });
+
+        assertEquals("Data", true, changeAdapter.update(testMap));
+    }
+
+    @Test
+    public void updateBatchNonExistent() {
+        final Map<Integer, String> testMap = new HashMap<>();
+
+        for (int i = 0; i < 3; i++) {
+            testMap.put(i, String.valueOf(i + 1));
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.UPDATE))
+                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Update invoked for nonexistent keys");
+                    }
+                });
+
+        assertEquals("Data", false, changeAdapter.update(testMap));
     }
 
     @Test

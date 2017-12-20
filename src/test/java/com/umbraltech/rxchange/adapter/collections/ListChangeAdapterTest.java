@@ -3,7 +3,6 @@ package com.umbraltech.rxchange.adapter.collections;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
 import com.umbraltech.rxchange.filter.ChangeTypeFilter;
-import com.umbraltech.rxchange.filter.MetadataFilter;
 import com.umbraltech.rxchange.message.ChangeMessage;
 import com.umbraltech.rxchange.observer.ChangeMessageObserver;
 import com.umbraltech.rxchange.type.ChangeType;
@@ -60,26 +59,13 @@ public class ListChangeAdapterTest {
     @Test
     public void addBatch() {
         final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testQueue = new LinkedList<>();
 
         for (int i = 0; i < 3; i++) {
             testList.add(i);
-            testQueue.add(i);
         }
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .filter(new MetadataFilter(Integer.class))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        fail("Filtered out type");
-                    }
-                });
-
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .filter(new MetadataFilter(List.class))
                 .subscribe(new ChangeMessageObserver<List<Integer>>() {
                     @Override
                     public void onNext(ChangeMessage<List<Integer>> changeMessage) {
@@ -89,15 +75,10 @@ public class ListChangeAdapterTest {
                                 Ints.toArray(changeMessage.getOldData()));
                         assertArrayEquals("New data", Ints.toArray(testList),
                                 Ints.toArray(changeMessage.getNewData()));
-
-                        testQueue.poll();
                     }
                 });
 
         assertEquals("Add", true, changeAdapter.add(testList));
-
-        // Verify only single entry was removed
-        assertEquals("Test queue", 2, testQueue.size());
     }
 
     @Test
@@ -155,28 +136,14 @@ public class ListChangeAdapterTest {
     @Test
     public void removeBatch() {
         final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testQueue = new LinkedList<>();
 
         for (int i = 0; i < 3; i++) {
             testList.add(i);
-            testQueue.add(i);
-
             changeAdapter.add(i);
         }
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .filter(new MetadataFilter(Integer.class))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        fail("Filtered out type");
-                    }
-                });
-
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .filter(new MetadataFilter(List.class))
                 .subscribe(new ChangeMessageObserver<List<Integer>>() {
                     @Override
                     public void onNext(ChangeMessage<List<Integer>> changeMessage) {
@@ -186,15 +153,10 @@ public class ListChangeAdapterTest {
                                 Ints.toArray(changeMessage.getOldData()));
                         assertArrayEquals("New data", Ints.toArray(ImmutableList.<Number>of()),
                                 Ints.toArray(changeMessage.getNewData()));
-
-                        testQueue.poll();
                     }
                 });
 
         assertEquals("Remove", true, changeAdapter.remove(testList));
-
-        // Verify only single entry was removed
-        assertEquals("Test queue", 2, testQueue.size());
     }
 
     @Test

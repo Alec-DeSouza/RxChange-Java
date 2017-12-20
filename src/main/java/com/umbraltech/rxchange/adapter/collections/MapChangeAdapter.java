@@ -35,6 +35,28 @@ public class MapChangeAdapter<K, D> {
         return true;
     }
 
+    public boolean add(final Map<K, D> dataMap) {
+
+        // Check if entries already exists
+        for (final K key : dataMap.keySet()) {
+            if (this.dataMap.containsKey(key)) {
+                return false;
+            }
+        }
+
+        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        this.dataMap.putAll(dataMap);
+
+        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
+
+        // Signal addition
+        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.ADD,
+                changeSnapshot));
+
+        return true;
+    }
+
     public boolean remove(final K key) {
 
         // Check if no entry to remove
@@ -55,6 +77,28 @@ public class MapChangeAdapter<K, D> {
         return true;
     }
 
+    public boolean remove(final Map<K, D> dataMap) {
+
+        // Check if no entries to remove
+        for (final K key : dataMap.keySet()) {
+            if (!this.dataMap.containsKey(key)) {
+                return false;
+            }
+        }
+
+        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        this.dataMap.entrySet().removeAll(dataMap.entrySet());
+
+        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
+
+        // Signal removal
+        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
+                changeSnapshot));
+
+        return true;
+    }
+
     public boolean update(final K key, final D data) {
 
         // Check if entry does not exist
@@ -67,6 +111,28 @@ public class MapChangeAdapter<K, D> {
 
         final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
         final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, data);
+
+        // Signal update
+        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
+                changeSnapshot));
+
+        return true;
+    }
+
+    public boolean update(final Map<K, D> dataMap) {
+
+        // Check if entries do not exist
+        for (final K key : dataMap.keySet()) {
+            if (!this.dataMap.containsKey(key)) {
+                return false;
+            }
+        }
+
+        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        this.dataMap.putAll(dataMap);
+
+        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
 
         // Signal update
         publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
