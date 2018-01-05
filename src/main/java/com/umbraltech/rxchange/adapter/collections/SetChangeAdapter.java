@@ -32,6 +32,28 @@ public class SetChangeAdapter<D> {
         return true;
     }
 
+    public boolean add(final Set<D> dataSet) {
+
+        // Check if entries already exist
+        for (final D data : dataSet) {
+            if (this.dataSet.contains(data)) {
+                return false;
+            }
+        }
+
+        final Set<D> oldSetSnapshot = ImmutableSet.copyOf(this.dataSet);
+        this.dataSet.addAll(dataSet);
+
+        final Set<D> newSetSnapshot = ImmutableSet.copyOf(this.dataSet);
+        final Set<D> changeSnapshot = ImmutableSet.copyOf(dataSet);
+
+        // Signal addition
+        publishSubject.onNext(new MetaChangeMessage<>(oldSetSnapshot, newSetSnapshot, ChangeType.ADD,
+                changeSnapshot));
+
+        return true;
+    }
+
     public boolean remove(final D data) {
 
         // Check if no entry to remove
@@ -46,6 +68,28 @@ public class SetChangeAdapter<D> {
 
         // Signal removal
         publishSubject.onNext(new MetaChangeMessage<>(oldSetSnapshot, newSetSnapshot, ChangeType.REMOVE, data));
+
+        return true;
+    }
+
+    public boolean remove(final Set<D> dataSet) {
+
+        // Check if entries do not exist
+        for (final D data : dataSet) {
+            if (!this.dataSet.contains(data)) {
+                return false;
+            }
+        }
+
+        final Set<D> oldSetSnapshot = ImmutableSet.copyOf(this.dataSet);
+        this.dataSet.removeAll(dataSet);
+
+        final Set<D> newSetSnapshot = ImmutableSet.copyOf(this.dataSet);
+        final Set<D> changeSnapshot = ImmutableSet.copyOf(dataSet);
+
+        // Signal addition
+        publishSubject.onNext(new MetaChangeMessage<>(oldSetSnapshot, newSetSnapshot, ChangeType.REMOVE,
+                changeSnapshot));
 
         return true;
     }

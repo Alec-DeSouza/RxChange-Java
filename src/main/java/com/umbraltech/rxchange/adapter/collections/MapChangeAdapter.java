@@ -37,7 +37,7 @@ public class MapChangeAdapter<K, D> {
 
     public boolean add(final Map<K, D> dataMap) {
 
-        // Check if entries already exists
+        // Check if entries already exist
         for (final K key : dataMap.keySet()) {
             if (this.dataMap.containsKey(key)) {
                 return false;

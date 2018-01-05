@@ -29,4 +29,22 @@ public class ChangeMessageTest {
     public void getChangeType() {
         assertEquals("Change type", ChangeType.UPDATE, changeMessage.getChangeType());
     }
+
+    @Test
+    public void getString() {
+        final StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append('[')
+                .append("oldData=")
+                .append(changeMessage.getOldData())
+                .append(", ")
+                .append("newData=")
+                .append(changeMessage.getNewData())
+                .append(", ")
+                .append("changeType=")
+                .append(changeMessage.getChangeType())
+                .append(']');
+
+        assertEquals("toString", stringBuilder.toString(), changeMessage.toString());
+    }
 }

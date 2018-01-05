@@ -85,6 +85,67 @@ public class SetChangeAdapterTest {
     }
 
     @Test
+    public void addBatch() {
+        final Set<Integer> testSet = new HashSet<>();
+
+        for (int i = 0; i < 3; i++) {
+            testSet.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        final MetaChangeMessage<Set<Integer>, Set<Integer>> metaChangeMessage =
+                                (MetaChangeMessage<Set<Integer>, Set<Integer>>) changeMessage;
+
+                        final Sets.SetView<Integer> dataDiffLeft = Sets.difference(changeMessage.getOldData(),
+                                changeMessage.getNewData());
+                        final Sets.SetView<Integer> dataDiffRight = Sets.difference(changeMessage.getNewData(),
+                                changeMessage.getOldData());
+
+                        assertEquals("Difference (left)", 0, dataDiffLeft.size());
+                        assertEquals("Difference (right)", 3, dataDiffRight.size());
+
+                        final Sets.SetView<Integer> metadataDiffLeft = Sets.difference(metaChangeMessage.getMetadata(),
+                                testSet);
+                        final Sets.SetView<Integer> metadataDiffRight = Sets.difference(testSet,
+                                metaChangeMessage.getMetadata());
+
+                        assertEquals("Metadata difference", 0, metadataDiffLeft.size() + metadataDiffRight.size());
+                    }
+                });
+
+        assertEquals("Data", true, changeAdapter.add(testSet));
+    }
+
+    @Test
+    public void addBatchExisting() {
+        final Set<Integer> testSet = new HashSet<>();
+
+        for (int i = 0; i < 3; i++) {
+            testSet.add(i);
+            changeAdapter.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Add invoked for existing value");
+                    }
+                });
+
+        assertEquals("Data", false, changeAdapter.add(testSet));
+    }
+
+    @Test
     public void remove() {
         final Queue<Integer> testQueue = new LinkedList<>();
 
@@ -122,6 +183,45 @@ public class SetChangeAdapterTest {
     }
 
     @Test
+    public void removeBatch() {
+        final Set<Integer> testSet = new HashSet<>();
+
+        for (int i = 0; i < 3; i++) {
+            testSet.add(i);
+            changeAdapter.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        final MetaChangeMessage<Set<Integer>, Set<Integer>> metaChangeMessage =
+                                (MetaChangeMessage<Set<Integer>, Set<Integer>>) changeMessage;
+
+                        final Sets.SetView<Integer> dataDiffLeft = Sets.difference(changeMessage.getOldData(),
+                                changeMessage.getNewData());
+                        final Sets.SetView<Integer> dataDiffRight = Sets.difference(changeMessage.getNewData(),
+                                changeMessage.getOldData());
+
+                        assertEquals("Difference (left)", 3, dataDiffLeft.size());
+                        assertEquals("Difference (right)", 0, dataDiffRight.size());
+
+                        final Sets.SetView<Integer> metadataDiffLeft = Sets.difference(metaChangeMessage.getMetadata(),
+                                testSet);
+                        final Sets.SetView<Integer> metadataDiffRight = Sets.difference(testSet,
+                                metaChangeMessage.getMetadata());
+
+                        assertEquals("Metadata difference", 0, metadataDiffLeft.size() + metadataDiffRight.size());
+                    }
+                });
+
+        assertEquals("Data", true, changeAdapter.remove(testSet));
+    }
+
+    @Test
     public void removeNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
@@ -137,6 +237,28 @@ public class SetChangeAdapterTest {
         for (int i = 0; i < 3; i++) {
             assertEquals("Data", false, changeAdapter.remove(i));
         }
+    }
+
+    @Test
+    public void removeBatchNonExistent() {
+        final Set<Integer> testSet = new HashSet<>();
+
+        for (int i = 0; i < 3; i++) {
+            testSet.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Remove invoked for nonexistent values");
+                    }
+                });
+
+        assertEquals("Data", false, changeAdapter.remove(testSet));
     }
 
     @Test
