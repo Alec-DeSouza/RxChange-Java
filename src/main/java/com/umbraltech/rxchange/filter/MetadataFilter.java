@@ -4,9 +4,20 @@ import com.umbraltech.rxchange.message.ChangeMessage;
 import com.umbraltech.rxchange.message.MetaChangeMessage;
 import io.reactivex.functions.Predicate;
 
+/**
+ * A utility class used for filtering the metadata type in observers
+ * <p>
+ * Only messages whose metadata is an instance of the specified type
+ * will be passed to observers
+ */
 public class MetadataFilter implements Predicate<ChangeMessage> {
     private final Class<?> metadataClass;
 
+    /**
+     * Constructs the metadata filter
+     *
+     * @param metadataClass the class type used for filtering the metadata
+     */
     public MetadataFilter(final Class<?> metadataClass) {
         this.metadataClass = metadataClass;
     }
