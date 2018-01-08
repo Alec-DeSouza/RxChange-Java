@@ -1,0 +1,6 @@
+com.umbraltech.rxchange.adapter
+com.umbraltech.rxchange.adapter.collections
+com.umbraltech.rxchange.filter
+com.umbraltech.rxchange.message
+com.umbraltech.rxchange.observer
+com.umbraltech.rxchange.type
