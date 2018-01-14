@@ -36,11 +36,31 @@ The reactive change model supports 3 types of data changes: add, remove, and upd
 
 #### Gradle
 
-Instructions coming soon!
+```gradle
+// For standard Java projects
+compile 'com.umbraltech:rxchange:1.0.1-jre'
+
+// For Android projects
+compile 'com.umbraltech:rxchange:1.0.1-android'
+```
 
 #### Maven
 
-Instructions coming soon!
+```xml
+<!-- For standard Java projects -->
+<dependency>
+    <groupId>com.umbraltech</groupId>
+    <artifactId>rxchange</artifactId>
+    <version>1.0.1-jre</version>
+</dependency>
+
+<!-- For Android projects -->
+<dependency>
+    <groupId>com.umbraltech</groupId>
+    <artifactId>rxchange</artifactId>
+    <version>1.0.1-android</version>
+</dependency>
+```
 
 ### Built-In Adapters
 
@@ -128,6 +148,63 @@ The examples below demonstrate how filtering can be done for both single and bat
                 .subscribe(metaChangeMessage -> /* Logic */ );
 ```
 
+#### Example
+
+The following example combines all of the segments listed above into a simple example that prints the values contained in each change message when data is added to the adapter:
+
+Code:
+
+```Java
+    final ListChangeAdapter<Integer> listChangeAdapter = new ListChangeAdapter<>();
+
+    listChangeAdapter.getObservable()
+            .filter(new ChangeTypeFilter(ChangeType.ADD))
+            .filter(new MetadataFilter(Integer.class))
+            .map(changeMessage -> (MetaChangeMessage<List<Integer>, Integer>) changeMessage)
+            .subscribe(metaChangeMessage -> {
+                System.out.println("---- Observer 1 (Single) ----");
+                System.out.println("Old List: " + metaChangeMessage.getOldData());
+                System.out.println("New List: " + metaChangeMessage.getNewData());
+                System.out.println("Metadata: " + metaChangeMessage.getMetadata());
+            });
+
+    listChangeAdapter.getObservable()
+            .filter(new ChangeTypeFilter(ChangeType.ADD))
+            .filter(new MetadataFilter(List.class))
+            .map(changeMessage -> (MetaChangeMessage<List<Integer>, Integer>) changeMessage)
+            .subscribe(metaChangeMessage -> {
+                System.out.println("---- Observer 2 (Batch) ----");
+                System.out.println("Old List: " + metaChangeMessage.getOldData());
+                System.out.println("New List: " + metaChangeMessage.getNewData());
+                System.out.println("Metadata: " + metaChangeMessage.getMetadata());
+            });
+
+    // Add the single integer to the dataset
+    listChangeAdapter.add(1);
+
+    final List<Integer> batchIntegers = new ArrayList<>();
+    batchIntegers.add(2);
+    batchIntegers.add(3);
+    batchIntegers.add(4);
+
+    // Add the list of integers to the dataset
+    listChangeAdapter.add(batchIntegers);
+```
+
+Output:
+
+```
+    ---- Observer 1 (Single) ----
+    Old List: []
+    New List: [1]
+    Metadata: 1
+    ---- Observer 2 (Batch) ----
+    Old List: [1]
+    New List: [1, 2, 3, 4]
+    Metadata: [2, 3, 4]
+```
+
+
 ## Additional Topics
 
 ### Lifecycle Awareness (Android)
@@ -158,4 +235,4 @@ public class MyActivity extends RxActivity {
 - [Javadoc](https://alec-desouza.github.io/RxChange/)
 
 ## Examples
-- [RxChange-Android-Demo](https://github.com/Alec-DeSouza/RxChange-Android-Demo)
+- [RxChange-Android-Demo](https://github.com/Alec-DeSouza/RxChange-Android-Demo/blob/master/app/src/main/java/com/umbraltech/rxchangedemo/MainActivity.java)
