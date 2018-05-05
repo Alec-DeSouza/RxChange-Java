@@ -65,7 +65,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Add", true, changeAdapter.add(i));
+            assertEquals("Add", true, changeAdapter.add(testList.get(i)));
         }
 
         // Verify queue was emptied
@@ -73,7 +73,55 @@ public class ListChangeAdapterTest {
     }
 
     @Test
-    public void addBatch() {
+    public void addAt() {
+        final List<Integer> testList = new ArrayList<>();
+        final Queue<Integer> testIndexQueue = new LinkedList<>();
+
+        for (int i = 0; i < 3; i++) {
+            testList.add(i);
+            testIndexQueue.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<List<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        assertArrayEquals("Old data", Ints.toArray(testList.subList(0, testIndexQueue.peek())),
+                                Ints.toArray(changeMessage.getOldData()));
+                        assertArrayEquals("New data", Ints.toArray(testList.subList(0, testIndexQueue.poll() + 1)),
+                                Ints.toArray(changeMessage.getNewData()));
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Add", true, changeAdapter.addAt(i, testList.get(i)));
+        }
+
+        // Verify queue was emptied
+        assertEquals("Test queue", 0, testIndexQueue.size());
+    }
+
+    @Test
+    public void addAtNonExistent() {
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.ADD))
+                .subscribe(new ChangeMessageObserver<List<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Add invoked for invalid index");
+                    }
+                });
+
+        assertEquals("Remove", false, changeAdapter.addAt(1, 0));
+    }
+
+    @Test
+    public void addAll() {
         final List<Integer> testList = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
@@ -94,7 +142,7 @@ public class ListChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Add", true, changeAdapter.add(testList));
+        assertEquals("Add", true, changeAdapter.addAll(testList));
     }
 
     @Test
@@ -124,7 +172,7 @@ public class ListChangeAdapterTest {
                 });
 
         for (int i = 0; i < 3; i++) {
-            assertEquals("Remove", true, changeAdapter.remove(0));
+            assertEquals("Remove", true, changeAdapter.remove(testList.get(i)));
         }
 
         // Verify queue was emptied
@@ -144,13 +192,61 @@ public class ListChangeAdapterTest {
                     }
                 });
 
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Remove", false, changeAdapter.remove(i));
-        }
+        assertEquals("Remove", false, changeAdapter.remove(0));
     }
 
     @Test
-    public void removeBatch() {
+    public void removeAt() {
+        final List<Integer> testList = new ArrayList<>();
+        final Queue<Integer> testIndexQueue = new LinkedList<>();
+
+        for (int i = 0; i < 3; i++) {
+            testList.add(i);
+            testIndexQueue.add(i);
+
+            changeAdapter.add(i);
+        }
+
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<List<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        assertArrayEquals("Old data", Ints.toArray(testList.subList(testIndexQueue.peek(), testList.size())),
+                                Ints.toArray(changeMessage.getOldData()));
+                        assertArrayEquals("New data", Ints.toArray(testList.subList(testIndexQueue.poll() + 1, testList.size())),
+                                Ints.toArray(changeMessage.getNewData()));
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Remove", true, changeAdapter.removeAt(0));
+        }
+
+        // Verify queue was emptied
+        assertEquals("Test queue", 0, testIndexQueue.size());
+    }
+
+    @Test
+    public void removeAtNonExistent() {
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<List<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Remove invoked for invalid index");
+                    }
+                });
+
+        assertEquals("Remove", false, changeAdapter.removeAt(0));
+    }
+
+    @Test
+    public void removeAll() {
         final List<Integer> testList = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
@@ -172,11 +268,11 @@ public class ListChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Remove", true, changeAdapter.remove(testList));
+        assertEquals("Remove", true, changeAdapter.removeAll(testList));
     }
 
     @Test
-    public void removeBatchNonExistent() {
+    public void removeAllNonExistent() {
         final List<Integer> testList = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
@@ -194,7 +290,7 @@ public class ListChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Remove", false, changeAdapter.remove(testList));
+        assertEquals("Remove", false, changeAdapter.removeAll(testList));
     }
 
     @Test
@@ -272,6 +368,6 @@ public class ListChangeAdapterTest {
             changeAdapter.add(i);
         }
 
-        assertArrayEquals("Data", Ints.toArray(testList), Ints.toArray(changeAdapter.getList()));
+        assertArrayEquals("Data", Ints.toArray(testList), Ints.toArray(changeAdapter.getAll()));
     }
 }

@@ -101,7 +101,7 @@ public class SetChangeAdapterTest {
     }
 
     @Test
-    public void addBatch() {
+    public void addAll() {
         final Set<Integer> testSet = new HashSet<>();
 
         for (int i = 0; i < 3; i++) {
@@ -135,11 +135,11 @@ public class SetChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", true, changeAdapter.add(testSet));
+        assertEquals("Data", true, changeAdapter.addAll(testSet));
     }
 
     @Test
-    public void addBatchExisting() {
+    public void addAllExisting() {
         final Set<Integer> testSet = new HashSet<>();
 
         for (int i = 0; i < 3; i++) {
@@ -158,7 +158,7 @@ public class SetChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", false, changeAdapter.add(testSet));
+        assertEquals("Data", false, changeAdapter.addAll(testSet));
     }
 
     @Test
@@ -199,7 +199,25 @@ public class SetChangeAdapterTest {
     }
 
     @Test
-    public void removeBatch() {
+    public void removeNonExistent() {
+        changeAdapter.getObservable()
+                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
+                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
+                    @Override
+                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
+                        //System.out.println(changeMessage.toString());
+
+                        fail("Remove invoked for nonexistent value");
+                    }
+                });
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("Data", false, changeAdapter.remove(i));
+        }
+    }
+
+    @Test
+    public void removeAll() {
         final Set<Integer> testSet = new HashSet<>();
 
         for (int i = 0; i < 3; i++) {
@@ -234,29 +252,11 @@ public class SetChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", true, changeAdapter.remove(testSet));
+        assertEquals("Data", true, changeAdapter.removeAll(testSet));
     }
 
     @Test
-    public void removeNonExistent() {
-        changeAdapter.getObservable()
-                .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
-
-                        fail("Remove invoked for nonexistent value");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.remove(i));
-        }
-    }
-
-    @Test
-    public void removeBatchNonExistent() {
+    public void removeAllNonExistent() {
         final Set<Integer> testSet = new HashSet<>();
 
         for (int i = 0; i < 3; i++) {
@@ -274,11 +274,11 @@ public class SetChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", false, changeAdapter.remove(testSet));
+        assertEquals("Data", false, changeAdapter.removeAll(testSet));
     }
 
     @Test
-    public void getSet() {
+    public void getAll() {
         final Set<Integer> testSet = new HashSet<>();
 
         for (int i = 0; i < 3; i++) {
@@ -286,8 +286,8 @@ public class SetChangeAdapterTest {
             changeAdapter.add(i);
         }
 
-        final Sets.SetView<Integer> leftDifference = Sets.difference(testSet, changeAdapter.getSet());
-        final Sets.SetView<Integer> rightDifference = Sets.difference(changeAdapter.getSet(), testSet);
+        final Sets.SetView<Integer> leftDifference = Sets.difference(testSet, changeAdapter.getAll());
+        final Sets.SetView<Integer> rightDifference = Sets.difference(changeAdapter.getAll(), testSet);
 
         assertEquals("Difference", 0, leftDifference.size() + rightDifference.size());
     }

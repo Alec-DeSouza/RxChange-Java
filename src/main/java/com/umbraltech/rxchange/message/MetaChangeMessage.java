@@ -51,16 +51,13 @@ public class MetaChangeMessage<D, M> extends ChangeMessage<D> {
 
     @Override
     public String toString() {
-        final StringBuilder stringBuilder = new StringBuilder();
-
-        stringBuilder.append('[')
-                .append("changeMessage=")
+        return new StringBuilder()
+                .append(MetaChangeMessage.class.getSimpleName())
+                .append("(changeMessage=")
                 .append(super.toString())
-                .append(", ")
-                .append("metadata=")
+                .append(", metadata=")
                 .append(metadata)
-                .append(']');
-
-        return stringBuilder.toString();
+                .append(")")
+                .toString();
     }
 }

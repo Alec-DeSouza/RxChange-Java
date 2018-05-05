@@ -63,4 +63,10 @@ public class SingleChangeAdapterTest {
         // Verify queue was emptied
         assertEquals("Test queue", 0, testQueue.size());
     }
+
+    @Test
+    public void get() {
+        changeAdapter.update(1);
+        assertEquals("Data", (Integer) 1, changeAdapter.get());
+    }
 }

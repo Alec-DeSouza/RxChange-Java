@@ -36,6 +36,22 @@ public class SetChangeAdapter<D> {
     private final Set<D> dataSet = new HashSet<>();
 
     /**
+     * Default constructor
+     */
+    public SetChangeAdapter() {
+        // Stub
+    }
+
+    /**
+     * Initializes the adapter with set of elements, without emitting a change message
+     *
+     * @param initialDataSet the initial set of elements
+     */
+    public SetChangeAdapter(final Set<D> initialDataSet) {
+        dataSet.addAll(initialDataSet);
+    }
+
+    /**
      * Adds an element to the set and emits a change message to surrounding observers
      * <p>
      * The metadata in the emitted change message will contain the element that was just added
@@ -70,7 +86,7 @@ public class SetChangeAdapter<D> {
      * @param dataSet the set containing the data to be added
      * @return {@code true} if all of the elements were added, {@code false} otherwise
      */
-    public boolean add(final Set<D> dataSet) {
+    public boolean addAll(final Set<D> dataSet) {
 
         // Check if entries already exist
         for (final D data : dataSet) {
@@ -127,7 +143,7 @@ public class SetChangeAdapter<D> {
      * @param dataSet the set containing the data to be removed
      * @return {@code true} if all of the elements were removed, {@code false} otherwise
      */
-    public boolean remove(final Set<D> dataSet) {
+    public boolean removeAll(final Set<D> dataSet) {
 
         // Check if entries do not exist
         for (final D data : dataSet) {
@@ -154,7 +170,7 @@ public class SetChangeAdapter<D> {
      *
      * @return the set of elements
      */
-    public Set<D> getSet() {
+    public Set<D> getAll() {
         return ImmutableSet.copyOf(dataSet);
     }
 

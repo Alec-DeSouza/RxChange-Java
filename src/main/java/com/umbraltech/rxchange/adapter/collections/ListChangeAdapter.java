@@ -36,16 +36,59 @@ public class ListChangeAdapter<D> {
     private final List<D> dataList = new ArrayList<>();
 
     /**
+     * Default constructor
+     */
+    public ListChangeAdapter() {
+        // Stub
+    }
+
+    /**
+     * Initializes the adapter with a list of elements, without emitting a change message
+     *
+     * @param initialDataList the initial list of elements
+     */
+    public ListChangeAdapter(final List<D> initialDataList) {
+        dataList.addAll(initialDataList);
+    }
+
+    /**
      * Adds an element to the list and emits a change message to surrounding observers
      * <p>
      * The metadata in the emitted change message will contain the element that was just added
      *
      * @param data the data to be added to the list
-     * @return {@code true} if the data was added to the list, {@code false} otherwise
+     * @return {@code true} always
      */
     public boolean add(final D data) {
         final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
         dataList.add(data);
+
+        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+        // Signal addition
+        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD, data));
+
+        return true;
+    }
+
+    /**
+     * Adds an element to the list at the specified index and emits a change message to surrounding observers
+     * <p>
+     * The metadata in the emitted change message will contain the element that was just added
+     *
+     * @param index the index at which the element is added
+     * @param data  the data to be added to the list
+     * @return {@code true} if the data was added to the list, {@code false} otherwise
+     */
+    public boolean addAt(final int index, final D data) {
+
+        // Validate index
+        if (index < 0 || index > dataList.size()) {
+            return false;
+        }
+
+        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+        dataList.add(index, data);
 
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
@@ -62,9 +105,9 @@ public class ListChangeAdapter<D> {
      * of elements that were just added
      *
      * @param dataList the list of elements to be added
-     * @return {@code true} if the elements were added to the list, {@code false} otherwise
+     * @return {@code true} always
      */
-    public boolean add(final List<D> dataList) {
+    public boolean addAll(final List<D> dataList) {
         final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
         this.dataList.addAll(dataList);
 
@@ -79,22 +122,23 @@ public class ListChangeAdapter<D> {
     }
 
     /**
-     * Removes the element at a specified index and emits a change message to surrounding observers
+     * Removes the specified element and emits a change message to surrounding observers
      * <p>
      * The metadata in the emitted change message will contain the element that was just removed
      *
-     * @param index the index of the element to be removed
+     * @param data the element to be removed
      * @return {@code true} if the element was removed, {@code false} otherwise
      */
-    public boolean remove(final int index) {
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+    public boolean remove(final D data) {
 
-        // Validate index
-        if ((index < 0) || (index >= dataList.size())) {
+        // Validate item
+        if (!dataList.contains(data)) {
             return false;
         }
 
-        final D data = dataList.remove(index);
+        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+        dataList.remove(data);
+
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
         // Signal removal
@@ -104,32 +148,51 @@ public class ListChangeAdapter<D> {
     }
 
     /**
-     * Removes the elements at the specified indices and emits a change message to surrounding observers
+     * Removes the element at a specified index and emits a change message to surrounding observers
      * <p>
-     * The metadata in the emitted change message will contain a snapshot of the list
-     * of elements that were just removed
+     * The metadata in the emitted change message will contain the element that was just removed
      *
-     * @param indexList the list of indices of the elements to be removed
-     * @return {@code true} if all of the specified elements were removed, {@code false} otherwise
+     * @param index the index of the element to be removed
+     * @return {@code true} if the element was removed, {@code false} otherwise
      */
-    public boolean remove(final List<Integer> indexList) {
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        final List<D> removedList = new ArrayList<>();
+    public boolean removeAt(final int index) {
 
-        for (final Integer i : indexList) {
-
-            // Validate index
-            if ((i < 0) || (i >= dataList.size())) {
-                return false;
-            }
-
-            removedList.add(dataList.get(i));
+        // Validate index
+        if ((index < 0) || (index >= dataList.size())) {
+            return false;
         }
 
-        dataList.removeAll(removedList);
+        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+        final D data = dataList.remove(index);
 
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
-        final List<D> changeSnapshot = ImmutableList.copyOf(removedList);
+
+        // Signal removal
+        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE, data));
+
+        return true;
+    }
+
+    /**
+     * Removes the specified list of elements and emits a change message to surrounding observers
+     * <p>
+     * The metadata in the emitted change message will contain the collection that was just removed
+     *
+     * @param dataList the list of elements to be removed
+     * @return {@code true} if all of the elements removed, {@code false} otherwise
+     */
+    public boolean removeAll(final List<D> dataList) {
+
+        // Validate items
+        if (!this.dataList.containsAll(dataList)) {
+            return false;
+        }
+
+        final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
+        this.dataList.removeAll(dataList);
+
+        final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
+        final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
 
         // Signal removal
         publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE,
@@ -149,14 +212,15 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if the element was updated, {@code false} otherwise
      */
     public boolean update(final int index, final D data) {
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
 
         // Validate index
         if ((index < 0) || (index >= dataList.size())) {
             return false;
         }
 
+        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
         dataList.set(index, data);
+
         final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
         // Signal update
@@ -180,7 +244,7 @@ public class ListChangeAdapter<D> {
      *
      * @return the list of elements
      */
-    public List<D> getList() {
+    public List<D> getAll() {
         return ImmutableList.copyOf(dataList);
     }
 

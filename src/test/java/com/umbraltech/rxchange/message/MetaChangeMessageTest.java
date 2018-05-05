@@ -37,25 +37,21 @@ public class MetaChangeMessageTest {
 
     @Test
     public void getString() {
-        final StringBuilder stringBuilder = new StringBuilder();
-
-        stringBuilder.append('[')
-                .append("changeMessage=")
-                .append('[')
-                .append("oldData=")
+        final String testMessage = new StringBuilder()
+                .append(MetaChangeMessage.class.getSimpleName())
+                .append("(changeMessage=")
+                .append(ChangeMessage.class.getSimpleName())
+                .append("(oldData=")
                 .append(changeMessage.getOldData())
-                .append(", ")
-                .append("newData=")
+                .append(", newData=")
                 .append(changeMessage.getNewData())
-                .append(", ")
-                .append("changeType=")
+                .append(", changeType=")
                 .append(changeMessage.getChangeType())
-                .append(']')
-                .append(", ")
-                .append("metadata=")
+                .append("), metadata=")
                 .append(changeMessage.getMetadata())
-                .append(']');
+                .append(")")
+                .toString();
 
-        assertEquals("toString", stringBuilder.toString(), changeMessage.toString());
+        assertEquals("toString", testMessage, changeMessage.toString());
     }
 }

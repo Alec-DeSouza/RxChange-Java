@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.umbraltech</groupId>
-    <artifactId>rxchange</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <artifactId>rxchange-java</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>RxChange</name>
+    <name>RxChange-Java</name>
     <description>An implementation of the reactive change model in Java</description>
-    <url>https://github.com/Alec-DeSouza/RxChange</url>
+    <url>https://github.com/Alec-DeSouza/RxChange-Java</url>
 
     <licenses>
         <license>
@@ -29,9 +29,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/Alec-DeSouza/RxChange.git</connection>
-        <developerConnection>scm:git:ssh://github.com:Alec-DeSouza/RxChange.git</developerConnection>
-        <url>http://github.com/Alec-DeSouza/RxChange</url>
+        <connection>scm:git:git://github.com/Alec-DeSouza/RxChange-Java.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Alec-DeSouza/RxChange-Java.git</developerConnection>
+        <url>https://github.com/Alec-DeSouza/RxChange-Java</url>
     </scm>
 
     <distributionManagement>

@@ -70,19 +70,15 @@ public class ChangeMessage<D> {
 
     @Override
     public String toString() {
-        final StringBuilder stringBuilder = new StringBuilder();
-
-        stringBuilder.append('[')
-                .append("oldData=")
+        return new StringBuilder()
+                .append(ChangeMessage.class.getSimpleName())
+                .append("(oldData=")
                 .append(oldData)
-                .append(", ")
-                .append("newData=")
+                .append(", newData=")
                 .append(newData)
-                .append(", ")
-                .append("changeType=")
+                .append(", changeType=")
                 .append(changeType)
-                .append(']');
-
-        return stringBuilder.toString();
+                .append(")")
+                .toString();
     }
 }

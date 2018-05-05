@@ -26,16 +26,33 @@ import io.reactivex.subjects.PublishSubject;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An adapter that implements the reactive change model for maps
  *
- * @param <K> the type of data used for the keys
- * @param <D> the type of data used for the values
+ * @param <K> the type used for the keys
+ * @param <D> the type used for the data
  */
 public class MapChangeAdapter<K, D> {
     private final PublishSubject<ChangeMessage<Map<K, D>>> publishSubject = PublishSubject.create();
     private final Map<K, D> dataMap = new HashMap<>();
+
+    /**
+     * Default constructor
+     */
+    public MapChangeAdapter() {
+        // Stub
+    }
+
+    /**
+     * Initializes the adapter with a map of entries, without emitting a change message
+     *
+     * @param initialDataMap the initial map of entries
+     */
+    public MapChangeAdapter(final Map<K, D> initialDataMap) {
+        dataMap.putAll(initialDataMap);
+    }
 
     /**
      * Adds a key-value pair to the map and emits a change message to surrounding observers
@@ -76,7 +93,7 @@ public class MapChangeAdapter<K, D> {
      * @param dataMap the map containing the entries to be added
      * @return {@code true} if all of the entries were added, {@code false} otherwise
      */
-    public boolean add(final Map<K, D> dataMap) {
+    public boolean addAll(final Map<K, D> dataMap) {
 
         // Check if entries already exist
         for (final K key : dataMap.keySet()) {
@@ -133,23 +150,23 @@ public class MapChangeAdapter<K, D> {
      * The metadata in the emitted change message will contain a snapshot
      * of the entries that were just removed
      *
-     * @param dataMap the map of the entries to be removed
+     * @param keySet the set of keys for the entries to be removed
      * @return {@code true} if all of the entries were removed, {@code false} otherwise
      */
-    public boolean remove(final Map<K, D> dataMap) {
+    public boolean removeAll(final Set<K> keySet) {
 
         // Check if no entries to remove
-        for (final K key : dataMap.keySet()) {
+        for (final K key : keySet) {
             if (!this.dataMap.containsKey(key)) {
                 return false;
             }
         }
 
         final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        this.dataMap.entrySet().removeAll(dataMap.entrySet());
+        this.dataMap.keySet().removeAll(keySet);
 
         final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
+        final Map<K, D> changeSnapshot = Maps.difference(oldMapSnapshot, newMapSnapshot).entriesOnlyOnLeft();
 
         // Signal removal
         publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
@@ -197,7 +214,7 @@ public class MapChangeAdapter<K, D> {
      * @param dataMap the map containing the entries to be updated
      * @return {@code true} if all of the entries were updated, {@code false} otherwise
      */
-    public boolean update(final Map<K, D> dataMap) {
+    public boolean updateAll(final Map<K, D> dataMap) {
 
         // Check if entries do not exist
         for (final K key : dataMap.keySet()) {
@@ -238,7 +255,7 @@ public class MapChangeAdapter<K, D> {
      *
      * @return the map of elements
      */
-    public Map<K, D> getMap() {
+    public Map<K, D> getAll() {
         return ImmutableMap.copyOf(dataMap);
     }
 

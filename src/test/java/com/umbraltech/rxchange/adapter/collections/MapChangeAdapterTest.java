@@ -109,7 +109,7 @@ public class MapChangeAdapterTest {
     }
 
     @Test
-    public void addBatch() {
+    public void addAll() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -137,11 +137,11 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", true, changeAdapter.add(testMap));
+        assertEquals("Data", true, changeAdapter.addAll(testMap));
     }
 
     @Test
-    public void addBatchExisting() {
+    public void addAllExisting() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -160,7 +160,7 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", false, changeAdapter.add(testMap));
+        assertEquals("Data", false, changeAdapter.addAll(testMap));
     }
 
     @Test
@@ -227,7 +227,7 @@ public class MapChangeAdapterTest {
     }
 
     @Test
-    public void removeBatch() {
+    public void removeAll() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -256,11 +256,11 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", true, changeAdapter.remove(testMap));
+        assertEquals("Data", true, changeAdapter.removeAll(testMap.keySet()));
     }
 
     @Test
-    public void removeBatchNonExistent() {
+    public void removeAllNonExistent() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -278,7 +278,7 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", false, changeAdapter.remove(testMap));
+        assertEquals("Data", false, changeAdapter.removeAll(testMap.keySet()));
     }
 
     @Test
@@ -341,7 +341,7 @@ public class MapChangeAdapterTest {
     }
 
     @Test
-    public void updateBatch() {
+    public void updateAll() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -370,11 +370,11 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", true, changeAdapter.update(testMap));
+        assertEquals("Data", true, changeAdapter.updateAll(testMap));
     }
 
     @Test
-    public void updateBatchNonExistent() {
+    public void updateAllNonExistent() {
         final Map<Integer, String> testMap = new HashMap<>();
 
         for (int i = 0; i < 3; i++) {
@@ -392,7 +392,7 @@ public class MapChangeAdapterTest {
                     }
                 });
 
-        assertEquals("Data", false, changeAdapter.update(testMap));
+        assertEquals("Data", false, changeAdapter.updateAll(testMap));
     }
 
     @Test
@@ -429,7 +429,7 @@ public class MapChangeAdapterTest {
             changeAdapter.add(i, String.valueOf(i));
         }
 
-        final MapDifference<Integer, String> dataDiff = Maps.difference(testMap, changeAdapter.getMap());
+        final MapDifference<Integer, String> dataDiff = Maps.difference(testMap, changeAdapter.getAll());
 
         assertEquals("Data (common)", 3, dataDiff.entriesInCommon().size());
         assertEquals("Data (different)", 0, dataDiff.entriesDiffering().size()

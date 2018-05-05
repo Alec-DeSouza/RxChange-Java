@@ -48,19 +48,17 @@ public class ChangeMessageTest {
 
     @Test
     public void getString() {
-        final StringBuilder stringBuilder = new StringBuilder();
-
-        stringBuilder.append('[')
-                .append("oldData=")
+        final String testMessage = new StringBuilder()
+                .append(ChangeMessage.class.getSimpleName())
+                .append("(oldData=")
                 .append(changeMessage.getOldData())
-                .append(", ")
-                .append("newData=")
+                .append(", newData=")
                 .append(changeMessage.getNewData())
-                .append(", ")
-                .append("changeType=")
+                .append(", changeType=")
                 .append(changeMessage.getChangeType())
-                .append(']');
+                .append(')')
+                .toString();
 
-        assertEquals("toString", stringBuilder.toString(), changeMessage.toString());
+        assertEquals("toString", testMessage, changeMessage.toString());
     }
 }

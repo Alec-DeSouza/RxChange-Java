@@ -1,5 +1,5 @@
-# RxChange - Reactive Change Model for Java
-RxChange is a library that implements the reactive change model for Java. It was designed to simplify the code required to update application components (e.g. UI, database) based on changes in data, while maintaining consistency and reliability.
+# RxChange-Java - Reactive Change Model for Java
+RxChange-Java is a library that implements the reactive change model for Java. It was designed to simplify the code required to update application components (e.g. UI, database) based on changes in data, while maintaining consistency and reliability.
 
 Under the hood, the library uses [RxJava](https://github.com/ReactiveX/RxJava) for publishing and subscribing to change events and [Guava](https://github.com/google/guava) to provide immutable snapshots for collections of data.
 
@@ -38,10 +38,10 @@ The reactive change model supports 3 types of data changes: add, remove, and upd
 
 ```gradle
 // For standard Java projects
-compile 'com.umbraltech:rxchange:1.0.1-jre'
+compile 'com.umbraltech:rxchange-java:1.0.0-jre'
 
 // For Android projects
-compile 'com.umbraltech:rxchange:1.0.1-android'
+compile 'com.umbraltech:rxchange-java:1.0.0-android'
 ```
 
 #### Maven
@@ -50,15 +50,15 @@ compile 'com.umbraltech:rxchange:1.0.1-android'
 <!-- For standard Java projects -->
 <dependency>
     <groupId>com.umbraltech</groupId>
-    <artifactId>rxchange</artifactId>
-    <version>1.0.1-jre</version>
+    <artifactId>rxchange-java</artifactId>
+    <version>1.0.0-jre</version>
 </dependency>
 
 <!-- For Android projects -->
 <dependency>
     <groupId>com.umbraltech</groupId>
-    <artifactId>rxchange</artifactId>
-    <version>1.0.1-android</version>
+    <artifactId>rxchange-java</artifactId>
+    <version>1.0.0-android</version>
 </dependency>
 ```
 
@@ -70,9 +70,9 @@ The following adapters are packaged with the RxChange library. Information regar
 | Adapter              | Corresponding Data    | Change Operations              | Metadata Available? |
 | :-----------:        | :-----------:      | -----------                      | :-----------:        |
 | SingleChangeAdapter  | Object             | update (data: D)                          | No                   |
-| ListChangeAdapter    | List             | add (data: D) <br> add (data: List) <br> remove (index: int) <br> remove (indices: List) <br> update (index: int, data: D) | Yes         |
-| MapChangeAdapter     | Map               | add (key: K, data: D) <br> add (entry: Map) <br> remove (key: K) <br> remove (entries: Map) <br> update (key: K, data: D) <br> update (entries: Map)                | Yes
-| SetChangeAdapter     | Set              | add (data: D) <br> add (data: Set) <br> remove (data: D) <br> remove (data: Set)                  | Yes
+| ListChangeAdapter    | List             | add (data: D) <br> addAll (data: List) <br> addAt (index: int, data: D) <br><br> remove (data: D) <br> removeAll (data: List) <br> removeAt (index: int) <br><br> update (index: int, data: D) | Yes         |
+| MapChangeAdapter     | Map               | add (key: K, data: D) <br> addAll (entries: Map) <br><br> remove (key: K) <br> removeAll (keys: Set) <br><br> update (key: K, data: D) <br> updateAll (entries: Map)                | Yes
+| SetChangeAdapter     | Set              | add (data: D) <br> addAll (data: Set) <br><br> remove (data: D) <br> removeAll (data: Set)                  | Yes
 
 ### Change Events
 
@@ -100,13 +100,15 @@ The `ChangeMessage` class provides 3 accessors:
 
 The `MetaChangeMessage` class is an extension of the `ChangeMessage` class, and can be used to read the metadata corresponding to a change in data. In order to access the metadata, simply call `getMetadata()` on a `MetaChangeMessage` instance.
 
-For more information on what metadata values are provided, please refer to the documentation for the adapters.
+For the collections provided by the library, you can acquire access to the `MetaChangeMessage` instance simply by casting or mapping like in the sample code below.
 
 ```Java
     listChangeAdapter.getObservable()
                 .map(changeMessage -> (MetaChangeMessage<List<Integer>, Integer>) changeMessage)
                 .subscribe(metaChangeMessage -> /* Logic */ );
 ```
+
+For more information on what metadata values are provided, please refer to the documentation for the adapters.
 
 #### Applying Filters
 
@@ -188,7 +190,7 @@ Code:
     batchIntegers.add(4);
 
     // Add the list of integers to the dataset
-    listChangeAdapter.add(batchIntegers);
+    listChangeAdapter.addAll(batchIntegers);
 ```
 
 Output:
@@ -232,7 +234,7 @@ public class MyActivity extends RxActivity {
 
 ## Documentation
 
-- [Javadoc](https://alec-desouza.github.io/RxChange/)
+- [Javadoc](https://alec-desouza.github.io/RxChange-Java/)
 
 ## Examples
 - [RxChange-Android-Demo](https://github.com/Alec-DeSouza/RxChange-Android-Demo/blob/master/app/src/main/java/com/umbraltech/rxchangedemo/MainActivity.java)

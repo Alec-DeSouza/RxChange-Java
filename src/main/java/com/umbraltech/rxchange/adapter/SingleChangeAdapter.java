@@ -59,6 +59,15 @@ public class SingleChangeAdapter<D> {
     }
 
     /**
+     * Returns the value of the underlying data
+     *
+     * @return the current data
+     */
+    public D get() {
+        return data;
+    }
+
+    /**
      * Returns a reference to the observable used for listening to change messages
      *
      * @return the observable reference
