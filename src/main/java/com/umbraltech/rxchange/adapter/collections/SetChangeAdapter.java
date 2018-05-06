@@ -89,10 +89,8 @@ public class SetChangeAdapter<D> {
     public boolean addAll(final Set<D> dataSet) {
 
         // Check if entries already exist
-        for (final D data : dataSet) {
-            if (this.dataSet.contains(data)) {
-                return false;
-            }
+        if (this.dataSet.containsAll(dataSet)) {
+            return false;
         }
 
         final Set<D> oldSetSnapshot = ImmutableSet.copyOf(this.dataSet);
@@ -146,10 +144,8 @@ public class SetChangeAdapter<D> {
     public boolean removeAll(final Set<D> dataSet) {
 
         // Check if entries do not exist
-        for (final D data : dataSet) {
-            if (!this.dataSet.contains(data)) {
-                return false;
-            }
+        if (!this.dataSet.containsAll(dataSet)) {
+            return false;
         }
 
         final Set<D> oldSetSnapshot = ImmutableSet.copyOf(this.dataSet);
@@ -158,7 +154,7 @@ public class SetChangeAdapter<D> {
         final Set<D> newSetSnapshot = ImmutableSet.copyOf(this.dataSet);
         final Set<D> changeSnapshot = ImmutableSet.copyOf(dataSet);
 
-        // Signal addition
+        // Signal removal
         publishSubject.onNext(new MetaChangeMessage<>(oldSetSnapshot, newSetSnapshot, ChangeType.REMOVE,
                 changeSnapshot));
 
