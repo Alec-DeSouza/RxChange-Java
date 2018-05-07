@@ -16,20 +16,22 @@
 
 package com.umbraltech.rxchange.adapter;
 
+import com.google.common.collect.Lists;
 import com.umbraltech.rxchange.filter.ChangeTypeFilter;
-import com.umbraltech.rxchange.message.ChangeMessage;
-import com.umbraltech.rxchange.observer.ChangeMessageObserver;
 import com.umbraltech.rxchange.type.ChangeType;
+import com.umbraltech.rxchange.util.ChangePayloadTestObserver;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SingleChangeAdapterTest {
     private SingleChangeAdapter<Integer> changeAdapter;
+
+    private final List<Integer> testList = Lists.newArrayList(1, 2, 3);
 
     @Before
     public void setUp() {
@@ -38,35 +40,26 @@ public class SingleChangeAdapterTest {
 
     @Test
     public void update() {
-        final Queue<Integer> testQueue = new LinkedList<>();
-
-        for (int i = 1; i < 4; i++) {
-            testQueue.add(i);
-        }
+        final List<Integer> oldPayloadList = Lists.newArrayList(0, 1, 2);
+        final List<Integer> newPayloadList = Lists.newArrayList(1, 2, 3);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Integer>() {
-                    @Override
-                    public void onNext(ChangeMessage<Integer> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertEquals("Old data", (Integer) (testQueue.peek() - 1), changeMessage.getOldData());
-                        assertEquals("New data", testQueue.poll(), changeMessage.getNewData());
-                    }
-                });
-
-        for (int i = 1; i < 4; i++) {
-            assertEquals("Update", true, changeAdapter.update(i));
+        // Perform sequence of updates
+        for (final Integer i : testList) {
+            assertTrue("Update", changeAdapter.update(i));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void get() {
-        changeAdapter.update(1);
-        assertEquals("Data", (Integer) 1, changeAdapter.get());
+        changeAdapter.update(testList.get(0));
+        assertEquals("Get", testList.get(0), changeAdapter.get());
     }
 }

@@ -23,7 +23,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class ChangeMessageTest {
-
     private ChangeMessage<Integer> changeMessage;
 
     @Before
@@ -33,12 +32,12 @@ public class ChangeMessageTest {
 
     @Test
     public void getOldData() {
-        assertEquals("Old data", (Integer) 1, changeMessage.getOldData());
+        assertEquals("Old data", Integer.valueOf(1), changeMessage.getOldData());
     }
 
     @Test
     public void getNewData() {
-        assertEquals("New data", (Integer) 2, changeMessage.getNewData());
+        assertEquals("New data", Integer.valueOf(2), changeMessage.getNewData());
     }
 
     @Test

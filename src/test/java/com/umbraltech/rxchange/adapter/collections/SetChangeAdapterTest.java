@@ -16,26 +16,25 @@
 
 package com.umbraltech.rxchange.adapter.collections;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.umbraltech.rxchange.filter.ChangeTypeFilter;
-import com.umbraltech.rxchange.message.ChangeMessage;
-import com.umbraltech.rxchange.message.MetaChangeMessage;
-import com.umbraltech.rxchange.observer.ChangeMessageObserver;
 import com.umbraltech.rxchange.type.ChangeType;
+import com.umbraltech.rxchange.util.ChangePayloadTestObserver;
+import com.umbraltech.rxchange.util.InvocationFailObserver;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class SetChangeAdapterTest {
-
     private SetChangeAdapter<Integer> changeAdapter;
+
+    private final Set<Integer> testSet = ImmutableSet.of(0, 1, 2);
 
     @Before
     public void setUp() {
@@ -44,251 +43,157 @@ public class SetChangeAdapterTest {
 
     @Test
     public void add() {
-        final Queue<Integer> testQueue = new LinkedList<>();
+        final List<Set<Integer>> oldPayloadList = Lists.newArrayList(
+                (Set<Integer>) ImmutableSet.<Integer>of(),
+                ImmutableSet.of(0),
+                ImmutableSet.of(0, 1)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(i);
-        }
+        final List<Set<Integer>> newPayloadList = Lists.newArrayList(
+                (Set<Integer>) ImmutableSet.of(0),
+                ImmutableSet.of(0, 1),
+                ImmutableSet.of(0, 1, 2)
+        );
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Set<Integer>, Integer> metaChangeMessage =
-                                (MetaChangeMessage<Set<Integer>, Integer>) changeMessage;
-
-                        final Sets.SetView<Integer> dataDiff = Sets.difference(changeMessage.getNewData(),
-                                changeMessage.getOldData());
-
-                        assertEquals("Difference (count)", 1, dataDiff.size());
-                        assertEquals("Difference (value)", testQueue.peek(), dataDiff.iterator().next());
-
-                        assertEquals("Metadata", testQueue.poll(), metaChangeMessage.getMetadata());
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.add(i));
+        // Perform sequence of updates
+        for (final Integer i : testSet) {
+            assertTrue("Add", changeAdapter.add(i));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addExisting() {
-        for (int i = 0; i < 3; i++) {
-            changeAdapter.add(i);
-        }
+        // Set up initial values
+        changeAdapter.addAll(testSet);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Set<Integer>>("Add invoked for existing value"));
 
-                        fail("Add invoked for existing value");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.add(i));
+        for (final Integer i : testSet) {
+            assertFalse("Add existing", changeAdapter.add(i));
         }
     }
 
     @Test
     public void addAll() {
-        final Set<Integer> testSet = new HashSet<>();
+        final List<Set<Integer>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableSet.<Integer>of());
 
-        for (int i = 0; i < 3; i++) {
-            testSet.add(i);
-        }
+        final List<Set<Integer>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableSet.of(0, 1, 2));
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Set<Integer>, Set<Integer>> metaChangeMessage =
-                                (MetaChangeMessage<Set<Integer>, Set<Integer>>) changeMessage;
+        // Perform batch update
+        assertTrue("Add all", changeAdapter.addAll(testSet));
 
-                        final Sets.SetView<Integer> dataDiffLeft = Sets.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-                        final Sets.SetView<Integer> dataDiffRight = Sets.difference(changeMessage.getNewData(),
-                                changeMessage.getOldData());
-
-                        assertEquals("Difference (left)", 0, dataDiffLeft.size());
-                        assertEquals("Difference (right)", 3, dataDiffRight.size());
-
-                        final Sets.SetView<Integer> metadataDiffLeft = Sets.difference(metaChangeMessage.getMetadata(),
-                                testSet);
-                        final Sets.SetView<Integer> metadataDiffRight = Sets.difference(testSet,
-                                metaChangeMessage.getMetadata());
-
-                        assertEquals("Metadata difference", 0, metadataDiffLeft.size() + metadataDiffRight.size());
-                    }
-                });
-
-        assertEquals("Data", true, changeAdapter.addAll(testSet));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addAllExisting() {
-        final Set<Integer> testSet = new HashSet<>();
-
-        for (int i = 0; i < 3; i++) {
-            testSet.add(i);
-            changeAdapter.add(i);
-        }
+        // Set up initial values
+        changeAdapter.addAll(testSet);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Set<Integer>>("Add invoked for existing values"));
 
-                        fail("Add invoked for existing value");
-                    }
-                });
-
-        assertEquals("Data", false, changeAdapter.addAll(testSet));
+        assertFalse("Add all existing", changeAdapter.addAll(testSet));
     }
 
     @Test
     public void remove() {
-        final Queue<Integer> testQueue = new LinkedList<>();
+        final List<Set<Integer>> oldPayloadList = Lists.newArrayList(
+                (Set<Integer>) ImmutableSet.of(0, 1, 2),
+                ImmutableSet.of(1, 2),
+                ImmutableSet.of(2)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(i);
-            changeAdapter.add(i);
-        }
+        final List<Set<Integer>> newPayloadList = Lists.newArrayList(
+                (Set<Integer>) ImmutableSet.of(1, 2),
+                ImmutableSet.of(2),
+                ImmutableSet.<Integer>of()
+        );
+
+        // Set up initial values
+        changeAdapter.addAll(testSet);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Set<Integer>, Integer> metaChangeMessage =
-                                (MetaChangeMessage<Set<Integer>, Integer>) changeMessage;
-
-                        final Sets.SetView<Integer> dataDiff = Sets.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-
-                        assertEquals("Difference (count)", 1, dataDiff.size());
-                        assertEquals("Difference (value)", testQueue.peek(), dataDiff.iterator().next());
-
-                        assertEquals("Metadata", testQueue.poll(), metaChangeMessage.getMetadata());
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.remove(i));
+        // Perform sequence of updates
+        for (final Integer i : testSet) {
+            assertTrue("Remove", changeAdapter.remove(i));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Set<Integer>>("Remove invoked for nonexistent value"));
 
-                        fail("Remove invoked for nonexistent value");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.remove(i));
+        for (final Integer i : testSet) {
+            assertFalse("Remove nonexistent", changeAdapter.remove(i));
         }
     }
 
     @Test
     public void removeAll() {
-        final Set<Integer> testSet = new HashSet<>();
+        final List<Set<Integer>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableSet.of(0, 1, 2));
 
-        for (int i = 0; i < 3; i++) {
-            testSet.add(i);
-            changeAdapter.add(i);
-        }
+        final List<Set<Integer>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableSet.<Integer>of());
+
+        // Set up initial values
+        changeAdapter.addAll(testSet);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Set<Integer>, Set<Integer>> metaChangeMessage =
-                                (MetaChangeMessage<Set<Integer>, Set<Integer>>) changeMessage;
+        // Perform batch update
+        assertTrue("Remove all", changeAdapter.removeAll(testSet));
 
-                        final Sets.SetView<Integer> dataDiffLeft = Sets.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-                        final Sets.SetView<Integer> dataDiffRight = Sets.difference(changeMessage.getNewData(),
-                                changeMessage.getOldData());
-
-                        assertEquals("Difference (left)", 3, dataDiffLeft.size());
-                        assertEquals("Difference (right)", 0, dataDiffRight.size());
-
-                        final Sets.SetView<Integer> metadataDiffLeft = Sets.difference(metaChangeMessage.getMetadata(),
-                                testSet);
-                        final Sets.SetView<Integer> metadataDiffRight = Sets.difference(testSet,
-                                metaChangeMessage.getMetadata());
-
-                        assertEquals("Metadata difference", 0, metadataDiffLeft.size() + metadataDiffRight.size());
-                    }
-                });
-
-        assertEquals("Data", true, changeAdapter.removeAll(testSet));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeAllNonExistent() {
-        final Set<Integer> testSet = new HashSet<>();
-
-        for (int i = 0; i < 3; i++) {
-            testSet.add(i);
-        }
-
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Set<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Set<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Set<Integer>>("Remove invoked for nonexistent values"));
 
-                        fail("Remove invoked for nonexistent values");
-                    }
-                });
-
-        assertEquals("Data", false, changeAdapter.removeAll(testSet));
+        assertFalse("Remove all nonexistent", changeAdapter.removeAll(testSet));
     }
 
     @Test
     public void getAll() {
-        final Set<Integer> testSet = new HashSet<>();
+        // Set up initial values
+        changeAdapter.addAll(testSet);
 
-        for (int i = 0; i < 3; i++) {
-            testSet.add(i);
-            changeAdapter.add(i);
-        }
-
-        final Sets.SetView<Integer> leftDifference = Sets.difference(testSet, changeAdapter.getAll());
-        final Sets.SetView<Integer> rightDifference = Sets.difference(changeAdapter.getAll(), testSet);
-
-        assertEquals("Difference", 0, leftDifference.size() + rightDifference.size());
+        assertEquals("Get all", testSet, changeAdapter.getAll());
     }
 }

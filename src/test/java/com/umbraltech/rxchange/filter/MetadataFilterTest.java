@@ -23,20 +23,20 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MetadataFilterTest {
+    private final MetadataFilter integerMetadataFilter = new MetadataFilter(Integer.class);
+    private final MetadataFilter listMetadataFilter = new MetadataFilter(List.class);
 
     @Test
     public void test() {
         final MetaChangeMessage<Integer, Integer> changeMessage =
                 new MetaChangeMessage<>(0, 1, ChangeType.UPDATE, 1);
 
-        final MetadataFilter integerMetadataFilter = new MetadataFilter(Integer.class);
-        final MetadataFilter listMetadataFilter = new MetadataFilter(List.class);
-
-        assertEquals("Metadata type integer", true, integerMetadataFilter.test(changeMessage));
-        assertEquals("Metadata type list", false, listMetadataFilter.test(changeMessage));
+        assertTrue("Metadata type integer", integerMetadataFilter.test(changeMessage));
+        assertFalse("Metadata type list", listMetadataFilter.test(changeMessage));
     }
 
     @Test
@@ -44,23 +44,15 @@ public class MetadataFilterTest {
         final MetaChangeMessage<Integer, Integer> changeMessage =
                 new MetaChangeMessage<>(0, 1, ChangeType.UPDATE, null);
 
-        final MetadataFilter integerMetadataFilter = new MetadataFilter(Integer.class);
-        final MetadataFilter listMetadataFilter = new MetadataFilter(List.class);
-
-        assertEquals("Metadata null", false, integerMetadataFilter.test(changeMessage));
-        assertEquals("Metadata type integer", false, integerMetadataFilter.test(changeMessage));
-        assertEquals("Metadata type list", false, listMetadataFilter.test(changeMessage));
+        assertFalse("Metadata type integer", integerMetadataFilter.test(changeMessage));
+        assertFalse("Metadata type list", listMetadataFilter.test(changeMessage));
     }
 
     @Test
     public void testNotMetadataInstance() {
         final ChangeMessage<Integer> changeMessage = new ChangeMessage<>(0, 1, ChangeType.UPDATE);
 
-        final MetadataFilter integerMetadataFilter = new MetadataFilter(Integer.class);
-        final MetadataFilter listMetadataFilter = new MetadataFilter(List.class);
-
-        assertEquals("Metadata instance", false, integerMetadataFilter.test(changeMessage));
-        assertEquals("Metadata type integer", false, integerMetadataFilter.test(changeMessage));
-        assertEquals("Metadata type list", false, listMetadataFilter.test(changeMessage));
+        assertFalse("Metadata type integer", integerMetadataFilter.test(changeMessage));
+        assertFalse("Metadata type list", listMetadataFilter.test(changeMessage));
     }
 }

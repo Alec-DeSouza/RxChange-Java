@@ -17,23 +17,23 @@
 package com.umbraltech.rxchange.adapter.collections;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.primitives.Ints;
+import com.google.common.collect.Lists;
 import com.umbraltech.rxchange.filter.ChangeTypeFilter;
-import com.umbraltech.rxchange.message.ChangeMessage;
-import com.umbraltech.rxchange.observer.ChangeMessageObserver;
 import com.umbraltech.rxchange.type.ChangeType;
+import com.umbraltech.rxchange.util.ChangePayloadTestObserver;
+import com.umbraltech.rxchange.util.InvocationFailObserver;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 import static org.junit.Assert.*;
 
 public class ListChangeAdapterTest {
     private ListChangeAdapter<Integer> changeAdapter;
+
+    private final List<Integer> testList = ImmutableList.of(0, 1, 2);
 
     @Before
     public void setUp() {
@@ -42,332 +42,258 @@ public class ListChangeAdapterTest {
 
     @Test
     public void add() {
-        final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testIndexQueue = new LinkedList<>();
+        final List<List<Integer>> oldPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.<Integer>of(),
+                ImmutableList.of(0),
+                ImmutableList.of(0, 1)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            testIndexQueue.add(i);
-        }
+        final List<List<Integer>> newPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(0),
+                ImmutableList.of(0, 1),
+                ImmutableList.of(0, 1, 2)
+        );
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(testList.subList(0, testIndexQueue.peek())),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(testList.subList(0, testIndexQueue.poll() + 1)),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Add", true, changeAdapter.add(testList.get(i)));
+        // Perform sequence of updates
+        for (final Integer i : testList) {
+            assertTrue("Add", changeAdapter.add(i));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testIndexQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addAt() {
-        final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testIndexQueue = new LinkedList<>();
+        final List<List<Integer>> oldPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.<Integer>of(),
+                ImmutableList.of(0),
+                ImmutableList.of(0, 1)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            testIndexQueue.add(i);
-        }
+        final List<List<Integer>> newPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(0),
+                ImmutableList.of(0, 1),
+                ImmutableList.of(0, 1, 2)
+        );
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(testList.subList(0, testIndexQueue.peek())),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(testList.subList(0, testIndexQueue.poll() + 1)),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Add", true, changeAdapter.addAt(i, testList.get(i)));
+        // Perform sequence of updates
+        for (int i = 0; i < testList.size(); i++) {
+            assertTrue("Add at", changeAdapter.addAt(i, testList.get(i)));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testIndexQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addAtNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<List<Integer>>("Add invoked for invalid index"));
 
-                        fail("Add invoked for invalid index");
-                    }
-                });
-
-        assertEquals("Remove", false, changeAdapter.addAt(1, 0));
+        assertFalse("Add at nonexistent", changeAdapter.addAt(1, 0));
     }
 
     @Test
     public void addAll() {
-        final List<Integer> testList = new ArrayList<>();
+        final List<List<Integer>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableList.<Integer>of());
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-        }
+        final List<List<Integer>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableList.of(0, 1, 2));
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(ImmutableList.<Number>of()),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(testList),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
+        // Perform batch update
+        assertTrue("Add all", changeAdapter.addAll(testList));
 
-        assertEquals("Add", true, changeAdapter.addAll(testList));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void remove() {
-        final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testIndexQueue = new LinkedList<>();
+        final List<List<Integer>> oldPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(0, 1, 2),
+                ImmutableList.of(1, 2),
+                ImmutableList.of(2)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            testIndexQueue.add(i);
+        final List<List<Integer>> newPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(1, 2),
+                ImmutableList.of(2),
+                ImmutableList.<Integer>of()
+        );
 
-            changeAdapter.add(i);
-        }
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(testList.subList(testIndexQueue.peek(), testList.size())),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(testList.subList(testIndexQueue.poll() + 1, testList.size())),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Remove", true, changeAdapter.remove(testList.get(i)));
+        // Perform sequence of updates
+        for (final Integer i : testList) {
+            assertTrue("Remove", changeAdapter.remove(i));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testIndexQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<List<Integer>>("Remove invoked for nonexistent entry"));
 
-                        fail("Remove invoked for nonexistent entry");
-                    }
-                });
-
-        assertEquals("Remove", false, changeAdapter.remove(0));
+        assertFalse("Remove nonexistent", changeAdapter.remove(0));
     }
 
     @Test
     public void removeAt() {
-        final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testIndexQueue = new LinkedList<>();
+        final List<List<Integer>> oldPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(0, 1, 2),
+                ImmutableList.of(1, 2),
+                ImmutableList.of(2)
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            testIndexQueue.add(i);
+        final List<List<Integer>> newPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(1, 2),
+                ImmutableList.of(2),
+                ImmutableList.<Integer>of()
+        );
 
-            changeAdapter.add(i);
-        }
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(testList.subList(testIndexQueue.peek(), testList.size())),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(testList.subList(testIndexQueue.poll() + 1, testList.size())),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Remove", true, changeAdapter.removeAt(0));
+        // Perform sequence of updates
+        for (int i = 0; i < testList.size(); i++) {
+            assertTrue("Remove at", changeAdapter.removeAt(0));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testIndexQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeAtNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<List<Integer>>("Remove invoked for invalid index"));
 
-                        fail("Remove invoked for invalid index");
-                    }
-                });
-
-        assertEquals("Remove", false, changeAdapter.removeAt(0));
+        assertFalse("Remove at nonexistent", changeAdapter.removeAt(0));
     }
 
     @Test
     public void removeAll() {
-        final List<Integer> testList = new ArrayList<>();
+        final List<List<Integer>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableList.of(0, 1, 2));
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            changeAdapter.add(i);
-        }
+        final List<List<Integer>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableList.<Integer>of());
+
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertArrayEquals("Old data", Ints.toArray(testList),
-                                Ints.toArray(changeMessage.getOldData()));
-                        assertArrayEquals("New data", Ints.toArray(ImmutableList.<Number>of()),
-                                Ints.toArray(changeMessage.getNewData()));
-                    }
-                });
+        // Perform batch update
+        assertTrue("Remove all", changeAdapter.removeAll(testList));
 
-        assertEquals("Remove", true, changeAdapter.removeAll(testList));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeAllNonExistent() {
-        final List<Integer> testList = new ArrayList<>();
-
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-        }
-
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<List<Integer>>("Remove invoked for nonexistent entries"));
 
-                        fail("Remove invoked for nonexistent entries");
-                    }
-                });
-
-        assertEquals("Remove", false, changeAdapter.removeAll(testList));
+        assertFalse("Remove all nonexistent", changeAdapter.removeAll(testList));
     }
 
     @Test
     public void update() {
-        final List<Integer> testList = new ArrayList<>();
-        final Queue<Integer> testIndexQueue = new LinkedList<>();
+        final List<Integer> finalTestList = Lists.newArrayList(1, 2, 3);
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            testIndexQueue.add(i);
+        final List<List<Integer>> oldPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(0, 1, 2),
+                ImmutableList.of(1, 1, 2),
+                ImmutableList.of(1, 2, 2)
+        );
 
-            changeAdapter.add(i);
-        }
+        final List<List<Integer>> newPayloadList = Lists.newArrayList(
+                (List<Integer>) ImmutableList.of(1, 1, 2),
+                ImmutableList.of(1, 2, 2),
+                ImmutableList.of(1, 2, 3)
+        );
+
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        assertEquals("Old data", testList.get(testIndexQueue.peek()),
-                                changeMessage.getOldData().get(testIndexQueue.peek()));
-                        assertEquals("New data", (Integer) (testList.get(testIndexQueue.peek()) + 1),
-                                changeMessage.getNewData().get(testIndexQueue.poll()));
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Update", true, changeAdapter.update(i, i + 1));
+        // Perform sequence of updates
+        for (int i = 0; i < finalTestList.size(); i++) {
+            assertTrue("Update", changeAdapter.update(i, finalTestList.get(i)));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testIndexQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void updateNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<List<Integer>>() {
-                    @Override
-                    public void onNext(ChangeMessage<List<Integer>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<List<Integer>>("Update invoked for nonexistent entry"));
 
-                        fail("Update invoked for nonexistent entry");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Update", false, changeAdapter.update(i, i + 1));
-        }
+        assertFalse("Update nonexistent", changeAdapter.update(0, 1));
     }
 
     @Test
     public void get() {
-        final List<Integer> testList = new ArrayList<>();
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            changeAdapter.add(i);
-        }
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", testList.get(i), changeAdapter.get(i));
+        for (int i = 0; i < testList.size(); i++) {
+            assertEquals("Get", testList.get(i), changeAdapter.get(i));
         }
     }
 
     @Test
     public void getAll() {
-        final List<Integer> testList = new ArrayList<>();
+        // Set up initial values
+        changeAdapter.addAll(testList);
 
-        for (int i = 0; i < 3; i++) {
-            testList.add(i);
-            changeAdapter.add(i);
-        }
-
-        assertArrayEquals("Data", Ints.toArray(testList), Ints.toArray(changeAdapter.getAll()));
+        assertEquals("Get all", testList, changeAdapter.getAll());
     }
 }

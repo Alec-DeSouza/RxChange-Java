@@ -16,26 +16,25 @@
 
 package com.umbraltech.rxchange.adapter.collections;
 
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.umbraltech.rxchange.filter.ChangeTypeFilter;
-import com.umbraltech.rxchange.message.ChangeMessage;
-import com.umbraltech.rxchange.message.MetaChangeMessage;
-import com.umbraltech.rxchange.observer.ChangeMessageObserver;
 import com.umbraltech.rxchange.type.ChangeType;
+import com.umbraltech.rxchange.util.ChangePayloadTestObserver;
+import com.umbraltech.rxchange.util.InvocationFailObserver;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class MapChangeAdapterTest {
     private MapChangeAdapter<Integer, String> changeAdapter;
+
+    private final Map<Integer, String> testMap = ImmutableMap.of(0, "0", 1, "1", 2, "2");
 
     @Before
     public void setUp() {
@@ -44,396 +43,246 @@ public class MapChangeAdapterTest {
 
     @Test
     public void add() {
-        final Queue<Map.Entry<Integer, String>> testQueue = new LinkedList<>();
+        final List<Map<Integer, String>> oldPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.<Integer, String>of(),
+                ImmutableMap.of(0, "0"),
+                ImmutableMap.of(0, "0", 1, "1")
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(Maps.immutableEntry(i, String.valueOf(i)));
-        }
+        final List<Map<Integer, String>> newPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.of(0, "0"),
+                ImmutableMap.of(0, "0", 1, "1"),
+                ImmutableMap.of(0, "0", 1, "1", 2, "2")
+        );
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
-                                (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;
-
-                        final MapDifference<Integer, String> dataDiff = Maps.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-
-                        assertEquals("Difference count (left)", 0, dataDiff.entriesOnlyOnLeft().size());
-                        assertEquals("Difference count (right)", 1, dataDiff.entriesOnlyOnRight().size());
-
-                        assertEquals("Difference (key)", true,
-                                dataDiff.entriesOnlyOnRight().containsKey(testQueue.peek().getKey()));
-                        assertEquals("Difference (value)", testQueue.peek().getValue(),
-                                dataDiff.entriesOnlyOnRight().get(testQueue.peek().getKey()));
-
-                        assertEquals("Metadata (key)", testQueue.peek().getKey(),
-                                metaChangeMessage.getMetadata().getKey());
-                        assertEquals("Metadata (value)", testQueue.poll().getValue(),
-                                metaChangeMessage.getMetadata().getValue());
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.add(i, String.valueOf(i)));
+        // Perform sequence of updates
+        for (final Map.Entry<Integer, String> entry : testMap.entrySet()) {
+            assertTrue("Add", changeAdapter.add(entry.getKey(), entry.getValue()));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addExisting() {
-        for (int i = 0; i < 3; i++) {
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Add invoked for existing entry"));
 
-                        fail("Add invoked for existing key");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.add(i, String.valueOf(i)));
+        for (final Map.Entry<Integer, String> entry : testMap.entrySet()) {
+            assertFalse("Add existing", changeAdapter.add(entry.getKey(), entry.getValue()));
         }
     }
 
     @Test
     public void addAll() {
-        final Map<Integer, String> testMap = new HashMap<>();
+        final List<Map<Integer, String>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableMap.<Integer, String>of());
 
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-        }
+        final List<Map<Integer, String>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableMap.of(0, "0", 1, "1", 2, "2"));
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
-                                testMap);
-                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
-                                testMap);
+        // Perform batch update
+        assertTrue("Add all", changeAdapter.addAll(testMap));
 
-                        assertEquals("Difference count (old)", 3, dataDiffOld.entriesOnlyOnLeft().size()
-                                + dataDiffOld.entriesOnlyOnRight().size()
-                                + dataDiffOld.entriesDiffering().size());
-                        assertEquals("Difference count (new)", 0, dataDiffNew.entriesOnlyOnLeft().size()
-                                + dataDiffNew.entriesOnlyOnRight().size()
-                                + dataDiffNew.entriesDiffering().size());
-                    }
-                });
-
-        assertEquals("Data", true, changeAdapter.addAll(testMap));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void addAllExisting() {
-        final Map<Integer, String> testMap = new HashMap<>();
-
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.ADD))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Add invoked for existing entries"));
 
-                        fail("Add invoked for duplicate keys");
-                    }
-                });
-
-        assertEquals("Data", false, changeAdapter.addAll(testMap));
+        assertFalse("Add all existing", changeAdapter.addAll(testMap));
     }
 
     @Test
     public void remove() {
-        final Queue<Map.Entry<Integer, String>> testQueue = new LinkedList<>();
+        final List<Map<Integer, String>> oldPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.of(0, "0", 1, "1", 2, "2"),
+                ImmutableMap.of(1, "1", 2, "2"),
+                ImmutableMap.of(2, "2")
+        );
 
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(Maps.immutableEntry(i, String.valueOf(i)));
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        final List<Map<Integer, String>> newPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.of(1, "1", 2, "2"),
+                ImmutableMap.of(2, "2"),
+                ImmutableMap.<Integer, String>of()
+        );
+
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
-                                (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;
-
-                        final MapDifference<Integer, String> dataDiff = Maps.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-
-                        assertEquals("Difference count (left)", 1, dataDiff.entriesOnlyOnLeft().size());
-                        assertEquals("Difference count (right)", 0, dataDiff.entriesOnlyOnRight().size());
-
-                        assertEquals("Difference (key)", true,
-                                dataDiff.entriesOnlyOnLeft().containsKey(testQueue.peek().getKey()));
-                        assertEquals("Difference (value)", testQueue.peek().getValue(),
-                                dataDiff.entriesOnlyOnLeft().get(testQueue.peek().getKey()));
-
-                        assertEquals("Metadata (key)", testQueue.peek().getKey(),
-                                metaChangeMessage.getMetadata().getKey());
-                        assertEquals("Metadata (value)", testQueue.poll().getValue(),
-                                metaChangeMessage.getMetadata().getValue());
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.remove(i));
+        // Perform sequence of updates
+        for (final Map.Entry<Integer, String> entry : testMap.entrySet()) {
+            assertTrue("Remove", changeAdapter.remove(entry.getKey()));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Remove invoked for nonexistent entry"));
 
-                        fail("Remove invoked for nonexistent key");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.remove(i));
-        }
+        assertFalse("Remove nonexistent", changeAdapter.remove(0));
     }
 
     @Test
     public void removeAll() {
-        final Map<Integer, String> testMap = new HashMap<>();
+        final List<Map<Integer, String>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableMap.of(0, "0", 1, "1", 2, "2"));
 
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        final List<Map<Integer, String>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableMap.<Integer, String>of());
+
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
-                                testMap);
-                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
-                                testMap);
+        // Perform batch update
+        assertTrue("Remove all", changeAdapter.removeAll(testMap.keySet()));
 
-                        assertEquals("Difference count (old)", 0, dataDiffOld.entriesOnlyOnLeft().size()
-                                + dataDiffOld.entriesOnlyOnRight().size()
-                                + dataDiffOld.entriesDiffering().size());
-                        assertEquals("Difference count (new)", 3, dataDiffNew.entriesOnlyOnLeft().size()
-                                + dataDiffNew.entriesOnlyOnRight().size()
-                                + dataDiffNew.entriesDiffering().size());
-                    }
-                });
-
-        assertEquals("Data", true, changeAdapter.removeAll(testMap.keySet()));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void removeAllNonExistent() {
-        final Map<Integer, String> testMap = new HashMap<>();
-
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-        }
-
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.REMOVE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Remove invoked for nonexistent entries"));
 
-                        fail("Update invoked for nonexistent keys");
-                    }
-                });
-
-        assertEquals("Data", false, changeAdapter.removeAll(testMap.keySet()));
+        assertFalse("Remove all nonexistent", changeAdapter.removeAll(testMap.keySet()));
     }
 
     @Test
     public void update() {
-        final Queue<Map.Entry<Integer, String>> testQueue = new LinkedList<>();
+        final Map<Integer, String> finalTestMap = ImmutableMap.of(0, "1", 1, "2", 2, "3");
 
-        for (int i = 0; i < 3; i++) {
-            testQueue.add(Maps.immutableEntry(i, String.valueOf(i + 1)));
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        final List<Map<Integer, String>> oldPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.of(0, "0", 1, "1", 2, "2"),
+                ImmutableMap.of(0, "1", 1, "1", 2, "2"),
+                ImmutableMap.of(0, "1", 1, "2", 2, "2")
+        );
+
+        final List<Map<Integer, String>> newPayloadList = Lists.newArrayList(
+                (Map<Integer, String>) ImmutableMap.of(0, "1", 1, "1", 2, "2"),
+                ImmutableMap.of(0, "1", 1, "2", 2, "2"),
+                ImmutableMap.of(0, "1", 1, "2", 2, "3")
+        );
+
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>> metaChangeMessage =
-                                (MetaChangeMessage<Map<Integer, String>, Map.Entry<Integer, String>>) changeMessage;
-
-                        final MapDifference<Integer, String> dataDiff = Maps.difference(changeMessage.getOldData(),
-                                changeMessage.getNewData());
-
-                        assertEquals("Different keys", 0, dataDiff.entriesOnlyOnLeft().size()
-                                + dataDiff.entriesOnlyOnRight().size());
-                        assertEquals("Different values", 1, dataDiff.entriesDiffering().size());
-
-                        assertEquals("Metadata key", testQueue.peek().getKey(),
-                                metaChangeMessage.getMetadata().getKey());
-                        assertEquals("Metadata value", testQueue.poll().getValue(),
-                                metaChangeMessage.getMetadata().getValue());
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", true, changeAdapter.update(i, String.valueOf(i + 1)));
+        // Perform sequence of updates
+        for (final Map.Entry<Integer, String> entry : finalTestMap.entrySet()) {
+            assertTrue("Update", changeAdapter.update(entry.getKey(), entry.getValue()));
         }
 
-        // Verify queue was emptied
-        assertEquals("Test queue", 0, testQueue.size());
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void updateNonExistent() {
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Update invoked for nonexistent entry"));
 
-                        fail("Update invoked for nonexistent key");
-                    }
-                });
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", false, changeAdapter.update(i, String.valueOf(i + 1)));
-        }
+        assertFalse("Update nonexistent", changeAdapter.update(0, "0"));
     }
 
     @Test
     public void updateAll() {
-        final Map<Integer, String> testMap = new HashMap<>();
+        final Map<Integer, String> finalTestMap = ImmutableMap.of(0, "1", 1, "2", 2, "3");
 
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i + 1));
-            changeAdapter.add(i, String.valueOf(i));
-        }
+        final List<Map<Integer, String>> oldPayloadList = new ArrayList<>();
+        oldPayloadList.add(ImmutableMap.of(0, "0", 1, "1", 2, "2"));
+
+        final List<Map<Integer, String>> newPayloadList = new ArrayList<>();
+        newPayloadList.add(ImmutableMap.of(0, "1", 1, "2", 2, "3"));
+
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new ChangePayloadTestObserver<>(oldPayloadList, newPayloadList));
 
-                        final MapDifference<Integer, String> dataDiffOld = Maps.difference(changeMessage.getOldData(),
-                                testMap);
-                        final MapDifference<Integer, String> dataDiffNew = Maps.difference(changeMessage.getNewData(),
-                                testMap);
+        // Perform batch update
+        assertTrue("Update all", changeAdapter.updateAll(finalTestMap));
 
-                        assertEquals("Difference count (old)", 3, dataDiffOld.entriesOnlyOnLeft().size()
-                                + dataDiffOld.entriesOnlyOnRight().size()
-                                + dataDiffOld.entriesDiffering().size());
-                        assertEquals("Difference count (new)", 0, dataDiffNew.entriesOnlyOnLeft().size()
-                                + dataDiffNew.entriesOnlyOnRight().size()
-                                + dataDiffNew.entriesDiffering().size());
-                    }
-                });
-
-        assertEquals("Data", true, changeAdapter.updateAll(testMap));
+        // Verify all payloads were tested
+        assertEquals("Remaining old payload", 0, oldPayloadList.size());
+        assertEquals("Remaining new payload", 0, newPayloadList.size());
     }
 
     @Test
     public void updateAllNonExistent() {
-        final Map<Integer, String> testMap = new HashMap<>();
-
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i + 1));
-        }
-
         changeAdapter.getObservable()
                 .filter(new ChangeTypeFilter(ChangeType.UPDATE))
-                .subscribe(new ChangeMessageObserver<Map<Integer, String>>() {
-                    @Override
-                    public void onNext(ChangeMessage<Map<Integer, String>> changeMessage) {
-                        //System.out.println(changeMessage.toString());
+                .subscribe(new InvocationFailObserver<Map<Integer, String>>("Update invoked for nonexistent entries"));
 
-                        fail("Update invoked for nonexistent keys");
-                    }
-                });
-
-        assertEquals("Data", false, changeAdapter.updateAll(testMap));
+        assertFalse("Update all nonexistent", changeAdapter.updateAll(testMap));
     }
 
     @Test
     public void get() {
-        final Map<Integer, String> testMap = new HashMap<>();
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-            changeAdapter.add(i, String.valueOf(i));
-        }
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", testMap.get(i), changeAdapter.get(i));
+        for (final Integer key : testMap.keySet()) {
+            assertEquals("Get", testMap.get(key), changeAdapter.get(key));
         }
     }
 
     @Test
     public void getNonExistent() {
-        for (int i = 0; i < 3; i++) {
-            changeAdapter.add(i, String.valueOf(i));
-        }
-
-        for (int i = 0; i < 3; i++) {
-            assertEquals("Data", null, changeAdapter.get(i + 3));
-        }
+        assertNull("Get nonexistent", changeAdapter.get(0));
     }
 
     @Test
     public void getAll() {
-        final Map<Integer, String> testMap = new HashMap<>();
+        // Set up initial values
+        changeAdapter.addAll(testMap);
 
-        for (int i = 0; i < 3; i++) {
-            testMap.put(i, String.valueOf(i));
-            changeAdapter.add(i, String.valueOf(i));
-        }
-
-        final MapDifference<Integer, String> dataDiff = Maps.difference(testMap, changeAdapter.getAll());
-
-        assertEquals("Data (common)", 3, dataDiff.entriesInCommon().size());
-        assertEquals("Data (different)", 0, dataDiff.entriesDiffering().size()
-                + dataDiff.entriesOnlyOnLeft().size()
-                + dataDiff.entriesOnlyOnRight().size());
+        assertEquals("Get all", testMap, changeAdapter.getAll());
     }
 }

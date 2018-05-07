@@ -32,7 +32,7 @@ public class MetaChangeMessageTest {
 
     @Test
     public void getMetadata() {
-        assertEquals("Metadata", (Integer) (-1), changeMessage.getMetadata());
+        assertEquals("Metadata", Integer.valueOf(-1), changeMessage.getMetadata());
     }
 
     @Test

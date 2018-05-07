@@ -21,7 +21,8 @@ import com.umbraltech.rxchange.type.ChangeType;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ChangeTypeFilterTest {
     private ChangeMessage<Integer> changeMessage;
@@ -37,8 +38,8 @@ public class ChangeTypeFilterTest {
         final ChangeTypeFilter removeTypeFilter = new ChangeTypeFilter(ChangeType.REMOVE);
         final ChangeTypeFilter updateTypeFilter = new ChangeTypeFilter(ChangeType.UPDATE);
 
-        assertEquals("Change type add", false, addTypeFilter.test(changeMessage));
-        assertEquals("Change type remove", false, removeTypeFilter.test(changeMessage));
-        assertEquals("Change type update", true, updateTypeFilter.test(changeMessage));
+        assertFalse("Change type add", addTypeFilter.test(changeMessage));
+        assertFalse("Change type remove", removeTypeFilter.test(changeMessage));
+        assertTrue("Change type update", updateTypeFilter.test(changeMessage));
     }
 }
