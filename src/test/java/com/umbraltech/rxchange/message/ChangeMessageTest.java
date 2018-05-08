@@ -47,16 +47,11 @@ public class ChangeMessageTest {
 
     @Test
     public void getString() {
-        final String testMessage = new StringBuilder()
-                .append(ChangeMessage.class.getSimpleName())
-                .append("(oldData=")
-                .append(changeMessage.getOldData())
-                .append(", newData=")
-                .append(changeMessage.getNewData())
-                .append(", changeType=")
-                .append(changeMessage.getChangeType())
-                .append(')')
-                .toString();
+        final String testMessage = String.format("%s(oldData=%s, newData=%s, changeType=%s)",
+                ChangeMessage.class.getSimpleName(),
+                changeMessage.getOldData(),
+                changeMessage.getNewData(),
+                changeMessage.getChangeType());
 
         assertEquals("toString", testMessage, changeMessage.toString());
     }

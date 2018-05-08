@@ -51,13 +51,9 @@ public class MetaChangeMessage<D, M> extends ChangeMessage<D> {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(MetaChangeMessage.class.getSimpleName())
-                .append("(changeMessage=")
-                .append(super.toString())
-                .append(", metadata=")
-                .append(metadata)
-                .append(")")
-                .toString();
+        return String.format("%s(changeMessage=%s, metadata=%s)",
+                MetaChangeMessage.class.getSimpleName(),
+                super.toString(),
+                metadata);
     }
 }

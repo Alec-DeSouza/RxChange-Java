@@ -70,15 +70,10 @@ public class ChangeMessage<D> {
 
     @Override
     public String toString() {
-        return new StringBuilder()
-                .append(ChangeMessage.class.getSimpleName())
-                .append("(oldData=")
-                .append(oldData)
-                .append(", newData=")
-                .append(newData)
-                .append(", changeType=")
-                .append(changeType)
-                .append(")")
-                .toString();
+        return String.format("%s(oldData=%s, newData=%s, changeType=%s)",
+                ChangeMessage.class.getSimpleName(),
+                oldData,
+                newData,
+                changeType);
     }
 }

@@ -37,20 +37,13 @@ public class MetaChangeMessageTest {
 
     @Test
     public void getString() {
-        final String testMessage = new StringBuilder()
-                .append(MetaChangeMessage.class.getSimpleName())
-                .append("(changeMessage=")
-                .append(ChangeMessage.class.getSimpleName())
-                .append("(oldData=")
-                .append(changeMessage.getOldData())
-                .append(", newData=")
-                .append(changeMessage.getNewData())
-                .append(", changeType=")
-                .append(changeMessage.getChangeType())
-                .append("), metadata=")
-                .append(changeMessage.getMetadata())
-                .append(")")
-                .toString();
+        final String testMessage = String.format("%s(changeMessage=%s(oldData=%s, newData=%s, changeType=%s), metadata=%s)",
+                MetaChangeMessage.class.getSimpleName(),
+                ChangeMessage.class.getSimpleName(),
+                changeMessage.getOldData(),
+                changeMessage.getNewData(),
+                changeMessage.getChangeType(),
+                changeMessage.getMetadata());
 
         assertEquals("toString", testMessage, changeMessage.toString());
     }
