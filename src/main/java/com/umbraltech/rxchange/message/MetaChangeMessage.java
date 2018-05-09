@@ -30,6 +30,8 @@ public class MetaChangeMessage<D, M> extends ChangeMessage<D> {
     private final M metadata;
 
     /**
+     * Creates a change message with the specified data, change type, and metadata
+     *
      * @param oldData    the original data
      * @param newData    the updated data
      * @param changeType the type of change that occurred

@@ -26,7 +26,7 @@ The reactive change model supports both individual changes (e.g. adding a single
 
 #### Message Layer
 
-The message layer is where the change messages are emitted. It is also the layer where the observers subscribe to and act upon these change events. Each change message contains snapshots of the data (both before and after the change), in addition to the metadata pertaining to the change itself (e.g. the element that was added).
+The message layer is where the change messages are emitted. It is also the layer where the observers subscribe to and act upon these change events. Each change message contains snapshots of the data (both before and after the change), the type of change that occurred, and the metadata pertaining to the change itself (e.g. the element that was added).
 
 The reactive change model supports 3 types of data changes: add, remove, and update.
 
@@ -64,7 +64,7 @@ compile 'com.umbraltech:rxchange-java:1.0.0-android'
 
 ### Built-In Adapters
 
-The following adapters are packaged with the RxChange library. Information regarding supported operations can be seen in the table below.
+The following adapters are packaged with the RxChange-Java library. Information regarding supported operations can be seen in the table below.
 
 
 | Adapter              | Corresponding Data    | Change Operations              | Metadata Available? |
@@ -82,7 +82,7 @@ To maintain simplicity, all the code samples will use a `ListChangeAdapter` with
 
 #### Registering Observers
 
-RxChange uses RxJava2 for listening to change events. The sample code below demonstrates how an observer can be registered with a change adapter.
+RxChange-Java uses RxJava for listening to change events. The sample code below demonstrates how an observer can be registered with a change adapter.
 
 ```Java
     listChangeAdapter.getObservable()
@@ -92,8 +92,8 @@ RxChange uses RxJava2 for listening to change events. The sample code below demo
 #### Reading Data
 
 The `ChangeMessage` class provides 3 accessors:
-- `getOldPayload()` - returns a snapshot of the data before the change
-- `getNewPayload()` - returns a snapshot of the data after the change
+- `getOldPayload()` - returns the data before the change
+- `getNewPayload()` - returns the data after the change
 - `getChangeType()` - returns the type of change that occurred with the data
 
 #### Reading Metadata
@@ -112,11 +112,11 @@ For more information on what metadata values are provided, please refer to the d
 
 #### Applying Filters
 
-RxChange comes with bundled with filters that can be used while registering observers, so that the containing will only be triggered when certain conditions are met.
+RxChange-Java comes with bundled with filters that can be used while registering observers, so that the code contained in the observers will only be triggered when certain conditions are met.
 
 ##### Change Type Filter
 
-The `ChangeTypeFilter` class allows listening to changes of a specific type. The example below registers an observer whose logic is only invoked when data is added to the adapter.
+The `ChangeTypeFilter` class allows for listening to changes of a specific type. The example below registers an observer whose logic is only invoked when data is added to the adapter.
 
 ```Java
     listChangeAdapter.getObservable()
@@ -173,7 +173,7 @@ Code:
     listChangeAdapter.getObservable()
             .filter(new ChangeTypeFilter(ChangeType.ADD))
             .filter(new MetadataFilter(List.class))
-            .map(changeMessage -> (MetaChangeMessage<List<Integer>, Integer>) changeMessage)
+            .map(changeMessage -> (MetaChangeMessage<List<Integer>, List<Integer>>) changeMessage)
             .subscribe(metaChangeMessage -> {
                 System.out.println("---- Observer 2 (Batch) ----");
                 System.out.println("Old List: " + metaChangeMessage.getOldData());
@@ -211,7 +211,7 @@ Output:
 
 ### Lifecycle Awareness (Android)
 
-When developing Android applications, it may be the case that observers need to be aware of an Activity or Fragment's lifecycle. We recommend using the [RxLifecycle](https://github.com/trello/RxLifecycle) library and then having activities extend the `RxActivity` class for activities or the `RxFragment` class for fragments. Afterwards, the `compose()` function can be used in conjunction with RxLifecycle's `bind***()` methods while registering the observer.
+When developing Android applications, it may be the case that observers need to be aware of an Activity or Fragment's lifecycle. We recommend using the [RxLifecycle](https://github.com/trello/RxLifecycle) library and then extending the `RxActivity` class for activities or the `RxFragment` class for fragments. Afterwards, the `compose()` function can be used in conjunction with RxLifecycle's `bind***()` methods while registering the observer.
 
 The example below registers an observer that will only listen up until the Activity enters the paused state.
 
@@ -236,5 +236,7 @@ public class MyActivity extends RxActivity {
 
 - [Javadoc](https://alec-desouza.github.io/RxChange-Java/)
 
-## Examples
-- [RxChange-Android-Demo](https://github.com/Alec-DeSouza/RxChange-Android-Demo/blob/master/app/src/main/java/com/umbraltech/rxchangedemo/MainActivity.java)
+## See Also
+
+- [RxChange-Kotlin](https://github.com/Alec-DeSouza/RxChange-Kotlin)
+- [RxChange-Android-Demo (Java)](https://github.com/Alec-DeSouza/RxChange-Android-Demo/)
