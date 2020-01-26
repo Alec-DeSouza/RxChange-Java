@@ -27,6 +27,9 @@ import io.reactivex.subjects.PublishSubject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * An adapter that implements the reactive change model for maps
@@ -37,6 +40,7 @@ import java.util.Set;
 public class MapChangeAdapter<K, D> {
     private final PublishSubject<ChangeMessage<Map<K, D>>> publishSubject = PublishSubject.create();
     private final Map<K, D> dataMap = new HashMap<>();
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /**
      * Default constructor
@@ -65,23 +69,29 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if the entry was added to the map, {@code false} otherwise
      */
     public boolean add(final K key, final D data) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if entry already exists
-        if (dataMap.containsKey(key)) {
-            return false;
+        try {
+            // Check if entry already exists
+            if (dataMap.containsKey(key)) {
+                return false;
+            }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
+            dataMap.put(key, data);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
+            final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, data);
+
+            // Signal addition
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.ADD,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
-        dataMap.put(key, data);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
-        final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, data);
-
-        // Signal addition
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.ADD,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -94,25 +104,31 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if all of the entries were added, {@code false} otherwise
      */
     public boolean addAll(final Map<K, D> dataMap) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if entries already exist
-        for (final K key : dataMap.keySet()) {
-            if (this.dataMap.containsKey(key)) {
-                return false;
+        try {
+            // Check if entries already exist
+            for (final K key : dataMap.keySet()) {
+                if (this.dataMap.containsKey(key)) {
+                    return false;
+                }
             }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            this.dataMap.putAll(dataMap);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
+
+            // Signal addition
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.ADD,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        this.dataMap.putAll(dataMap);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
-
-        // Signal addition
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.ADD,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -125,23 +141,29 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if the entry was removed, {@code false} otherwise
      */
     public boolean remove(final K key) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if no entry to remove
-        if (!dataMap.containsKey(key)) {
-            return false;
+        try {
+            // Check if no entry to remove
+            if (!dataMap.containsKey(key)) {
+                return false;
+            }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
+            final D resultData = dataMap.remove(key);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
+            final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, resultData);
+
+            // Signal removal
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
-        final D resultData = dataMap.remove(key);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
-        final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, resultData);
-
-        // Signal removal
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -154,25 +176,31 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if all of the entries were removed, {@code false} otherwise
      */
     public boolean removeAll(final Set<K> keySet) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if no entries to remove
-        for (final K key : keySet) {
-            if (!this.dataMap.containsKey(key)) {
-                return false;
+        try {
+            // Check if no entries to remove
+            for (final K key : keySet) {
+                if (!this.dataMap.containsKey(key)) {
+                    return false;
+                }
             }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            this.dataMap.keySet().removeAll(keySet);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            final Map<K, D> changeSnapshot = Maps.difference(oldMapSnapshot, newMapSnapshot).entriesOnlyOnLeft();
+
+            // Signal removal
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        this.dataMap.keySet().removeAll(keySet);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        final Map<K, D> changeSnapshot = Maps.difference(oldMapSnapshot, newMapSnapshot).entriesOnlyOnLeft();
-
-        // Signal removal
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.REMOVE,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -186,23 +214,29 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if the entry was updated, {@code false} otherwise
      */
     public boolean update(final K key, final D data) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if entry does not exist
-        if (!dataMap.containsKey(key)) {
-            return false;
+        try {
+            // Check if entry does not exist
+            if (!dataMap.containsKey(key)) {
+                return false;
+            }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
+            dataMap.put(key, data);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
+            final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, data);
+
+            // Signal update
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(dataMap);
-        dataMap.put(key, data);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(dataMap);
-        final Map.Entry<K, D> changeSnapshot = Maps.immutableEntry(key, data);
-
-        // Signal update
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -215,25 +249,31 @@ public class MapChangeAdapter<K, D> {
      * @return {@code true} if all of the entries were updated, {@code false} otherwise
      */
     public boolean updateAll(final Map<K, D> dataMap) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Check if entries do not exist
-        for (final K key : dataMap.keySet()) {
-            if (!this.dataMap.containsKey(key)) {
-                return false;
+        try {
+            // Check if entries do not exist
+            for (final K key : dataMap.keySet()) {
+                if (!this.dataMap.containsKey(key)) {
+                    return false;
+                }
             }
+
+            final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            this.dataMap.putAll(dataMap);
+
+            final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
+            final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
+
+            // Signal update
+            publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final Map<K, D> oldMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        this.dataMap.putAll(dataMap);
-
-        final Map<K, D> newMapSnapshot = ImmutableMap.copyOf(this.dataMap);
-        final Map<K, D> changeSnapshot = ImmutableMap.copyOf(dataMap);
-
-        // Signal update
-        publishSubject.onNext(new MetaChangeMessage<>(oldMapSnapshot, newMapSnapshot, ChangeType.UPDATE,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -243,11 +283,14 @@ public class MapChangeAdapter<K, D> {
      * @return the data associated with the key, null if not found
      */
     public D get(final K key) {
-        if (!dataMap.containsKey(key)) {
-            return null;
-        }
+        final Lock lock = readWriteLock.readLock();
+        lock.lock();
 
-        return dataMap.get(key);
+        try {
+            return dataMap.get(key);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -256,7 +299,14 @@ public class MapChangeAdapter<K, D> {
      * @return the map of elements
      */
     public Map<K, D> getAll() {
-        return ImmutableMap.copyOf(dataMap);
+        final Lock lock = readWriteLock.readLock();
+        lock.lock();
+
+        try {
+            return ImmutableMap.copyOf(dataMap);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

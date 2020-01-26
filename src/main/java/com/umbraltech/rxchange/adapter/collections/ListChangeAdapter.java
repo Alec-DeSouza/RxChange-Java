@@ -25,6 +25,9 @@ import io.reactivex.subjects.PublishSubject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * An adapter that implements the reactive change model for lists
@@ -34,6 +37,7 @@ import java.util.List;
 public class ListChangeAdapter<D> {
     private final PublishSubject<ChangeMessage<List<D>>> publishSubject = PublishSubject.create();
     private final List<D> dataList = new ArrayList<>();
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /**
      * Default constructor
@@ -60,15 +64,22 @@ public class ListChangeAdapter<D> {
      * @return {@code true} always
      */
     public boolean add(final D data) {
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        dataList.add(data);
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+        try {
+            final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+            dataList.add(data);
 
-        // Signal addition
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD, data));
+            final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
 
-        return true;
+            // Signal addition
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD, data));
+
+            return true;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -81,21 +92,27 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if the data was added to the list, {@code false} otherwise
      */
     public boolean addAt(final int index, final D data) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Validate index
-        if (index < 0 || index > dataList.size()) {
-            return false;
+        try {
+            // Validate index
+            if (index < 0 || index > dataList.size()) {
+                return false;
+            }
+
+            final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+            dataList.add(index, data);
+
+            final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+            // Signal addition
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD, data));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        dataList.add(index, data);
-
-        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
-
-        // Signal addition
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD, data));
-
-        return true;
     }
 
     /**
@@ -108,17 +125,24 @@ public class ListChangeAdapter<D> {
      * @return {@code true} always
      */
     public boolean addAll(final List<D> dataList) {
-        final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
-        this.dataList.addAll(dataList);
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
-        final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
+        try {
+            final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
+            this.dataList.addAll(dataList);
 
-        // Signal addition
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD,
-                changeSnapshot));
+            final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
+            final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
 
-        return true;
+            // Signal addition
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.ADD,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -130,21 +154,27 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if the element was removed, {@code false} otherwise
      */
     public boolean remove(final D data) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Validate item
-        if (!dataList.contains(data)) {
-            return false;
+        try {
+            // Validate item
+            if (!dataList.contains(data)) {
+                return false;
+            }
+
+            final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+            dataList.remove(data);
+
+            final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+            // Signal removal
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE, data));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        dataList.remove(data);
-
-        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
-
-        // Signal removal
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE, data));
-
-        return true;
     }
 
     /**
@@ -156,21 +186,27 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if the element was removed, {@code false} otherwise
      */
     public boolean removeAt(final int index) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Validate index
-        if ((index < 0) || (index >= dataList.size())) {
-            return false;
+        try {
+            // Validate index
+            if ((index < 0) || (index >= dataList.size())) {
+                return false;
+            }
+
+            final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+            final D data = dataList.remove(index);
+
+            final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+            // Signal removal
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE, data));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        final D data = dataList.remove(index);
-
-        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
-
-        // Signal removal
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE, data));
-
-        return true;
     }
 
     /**
@@ -182,23 +218,29 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if all of the elements removed, {@code false} otherwise
      */
     public boolean removeAll(final List<D> dataList) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Validate items
-        if (!this.dataList.containsAll(dataList)) {
-            return false;
+        try {
+            // Validate items
+            if (!this.dataList.containsAll(dataList)) {
+                return false;
+            }
+
+            final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
+            this.dataList.removeAll(dataList);
+
+            final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
+            final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
+
+            // Signal removal
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE,
+                    changeSnapshot));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final List<D> oldListSnapshot = ImmutableList.copyOf(this.dataList);
-        this.dataList.removeAll(dataList);
-
-        final List<D> newListSnapshot = ImmutableList.copyOf(this.dataList);
-        final List<D> changeSnapshot = ImmutableList.copyOf(dataList);
-
-        // Signal removal
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.REMOVE,
-                changeSnapshot));
-
-        return true;
     }
 
     /**
@@ -212,21 +254,27 @@ public class ListChangeAdapter<D> {
      * @return {@code true} if the element was updated, {@code false} otherwise
      */
     public boolean update(final int index, final D data) {
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Validate index
-        if ((index < 0) || (index >= dataList.size())) {
-            return false;
+        try {
+            // Validate index
+            if ((index < 0) || (index >= dataList.size())) {
+                return false;
+            }
+
+            final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
+            dataList.set(index, data);
+
+            final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
+
+            // Signal update
+            publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.UPDATE, data));
+
+            return true;
+        } finally {
+            lock.unlock();
         }
-
-        final List<D> oldListSnapshot = ImmutableList.copyOf(dataList);
-        dataList.set(index, data);
-
-        final List<D> newListSnapshot = ImmutableList.copyOf(dataList);
-
-        // Signal update
-        publishSubject.onNext(new MetaChangeMessage<>(oldListSnapshot, newListSnapshot, ChangeType.UPDATE, data));
-
-        return true;
     }
 
     /**
@@ -236,7 +284,14 @@ public class ListChangeAdapter<D> {
      * @return the element at the specified index
      */
     public D get(final int index) {
-        return dataList.get(index);
+        final Lock lock = readWriteLock.readLock();
+        lock.lock();
+
+        try {
+            return dataList.get(index);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -245,7 +300,14 @@ public class ListChangeAdapter<D> {
      * @return the list of elements
      */
     public List<D> getAll() {
-        return ImmutableList.copyOf(dataList);
+        final Lock lock = readWriteLock.readLock();
+        lock.lock();
+
+        try {
+            return ImmutableList.copyOf(dataList);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

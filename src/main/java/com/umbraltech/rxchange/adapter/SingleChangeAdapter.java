@@ -22,6 +22,10 @@ import com.umbraltech.rxchange.type.ChangeType;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 /**
  * An adapter that implements the reactive change model for a single element
  *
@@ -29,7 +33,8 @@ import io.reactivex.subjects.PublishSubject;
  */
 public class SingleChangeAdapter<D> {
     private final PublishSubject<ChangeMessage<D>> publishSubject = PublishSubject.create();
-    private D data;
+    private volatile D data;
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /**
      * Initializes the adapter with a value, without emitting a change message
@@ -49,13 +54,20 @@ public class SingleChangeAdapter<D> {
      * @return {@code true} if the element was updated, {@code false} otherwise
      */
     public boolean update(final D data) {
-        final D oldData = this.data;
-        this.data = data;
+        final Lock lock = readWriteLock.writeLock();
+        lock.lock();
 
-        // Signal update
-        publishSubject.onNext(new MetaChangeMessage<>(oldData, this.data, ChangeType.UPDATE, null));
+        try {
+            final D oldData = this.data;
+            this.data = data;
 
-        return true;
+            // Signal update
+            publishSubject.onNext(new MetaChangeMessage<>(oldData, this.data, ChangeType.UPDATE, null));
+
+            return true;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -64,7 +76,14 @@ public class SingleChangeAdapter<D> {
      * @return the current data
      */
     public D get() {
-        return data;
+        final Lock lock = readWriteLock.readLock();
+        lock.lock();
+
+        try {
+            return data;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
