@@ -34,14 +34,17 @@ The reactive change model supports 3 types of data changes: add, remove, and upd
 
 ### Dependencies
 
+[![Maven Central | JRE](https://img.shields.io/maven-central/v/com.umbraltech/rxchange-java/1.1.0-jre.svg)](https://mvnrepository.com/artifact/com.umbraltech/rxchange-java/1.1.0-jre)
+[![Maven Central | Android](https://img.shields.io/maven-central/v/com.umbraltech/rxchange-java/1.1.0-android.svg)](https://mvnrepository.com/artifact/com.umbraltech/rxchange-java/1.1.0-android)
+
 #### Gradle
 
 ```gradle
 // For standard Java projects
-compile 'com.umbraltech:rxchange-java:1.0.0-jre'
+implementation 'com.umbraltech:rxchange-java:x.y.z-jre'
 
 // For Android projects
-compile 'com.umbraltech:rxchange-java:1.0.0-android'
+implementation 'com.umbraltech:rxchange-java:x.y.z-android'
 ```
 
 #### Maven
@@ -51,14 +54,14 @@ compile 'com.umbraltech:rxchange-java:1.0.0-android'
 <dependency>
     <groupId>com.umbraltech</groupId>
     <artifactId>rxchange-java</artifactId>
-    <version>1.0.0-jre</version>
+    <version>x.y.z-jre</version>
 </dependency>
 
 <!-- For Android projects -->
 <dependency>
     <groupId>com.umbraltech</groupId>
     <artifactId>rxchange-java</artifactId>
-    <version>1.0.0-android</version>
+    <version>x.y.z-android</version>
 </dependency>
 ```
 
@@ -211,26 +214,7 @@ Output:
 
 ### Lifecycle Awareness (Android)
 
-When developing Android applications, it may be the case that observers need to be aware of an Activity or Fragment's lifecycle. We recommend using the [RxLifecycle](https://github.com/trello/RxLifecycle) library and then extending the `RxActivity` class for activities or the `RxFragment` class for fragments. Afterwards, the `compose()` function can be used in conjunction with RxLifecycle's `bind***()` methods while registering the observer.
-
-The example below registers an observer that will only listen up until the Activity enters the paused state.
-
-```Java
-
-public class MyActivity extends RxActivity {
-
-    // ...
-
-    private void myFunction() {
-
-        // ...
-
-        listChangeAdapter.getObservable()
-                    .compose(bindUntilEvent(ActivityEvent.PAUSE))
-                    .subscribe(changeMessage -> /* Logic */ );
-    }
-}
-```
+When developing Android applications, it may be the case that observers need to be aware of an Activity or Fragment's lifecycle. We recommend using the [AutoDispose](https://uber.github.io/AutoDispose/) library to achieve this purpose.
 
 ## Documentation
 
